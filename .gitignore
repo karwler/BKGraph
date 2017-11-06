@@ -1,6 +1,7 @@
 #directories
 bin*
 build*
+.vs
 
 #files
 *.o
