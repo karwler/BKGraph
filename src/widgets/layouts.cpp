@@ -2,15 +2,15 @@
 
 // LAYOUT
 
-Layout::Layout(const Size& SIZ, bool VRT, const vector<Widget*>& WGTS) :
+Layout::Layout(const Size& SIZ, bool VRT) :
 	Widget(SIZ),
-	vertical(VRT)
-{
-	setWidgets(WGTS);
-}
+	vertical(VRT),
+	poss({0})
+{}
 
 Layout::~Layout() {
-	clearWidgets();
+	for (Widget* it : wgts)
+		delete it;
 }
 
 void Layout::setVertical(bool yes) {
@@ -19,7 +19,9 @@ void Layout::setVertical(bool yes) {
 }
 
 void Layout::setWidgets(const vector<Widget*>& widgets) {
-	clearWidgets();
+	for (Widget* it : wgts)	// get rid of previously existing widgets
+		delete it;
+	
 	wgts.resize(widgets.size());
 	poss.resize(widgets.size()+1);
 
@@ -50,13 +52,6 @@ void Layout::updateValues() {
 	poss[wgts.size()] = pos;
 }
 
-void Layout::clearWidgets() {
-	for (Widget* it : wgts)
-		delete it;
-	wgts.clear();
-	poss.clear();
-}
-
 vec2i Layout::wgtPos(sizt id) const {
 	vec2i pos = position();
 	return vertical ? vec2i(pos.x, pos.y + poss[id]) : vec2i(pos.x + poss[id], pos.y);
@@ -69,12 +64,17 @@ vec2i Layout::wgtSize(sizt id) const {
 
 // SCROLL AREA
 
-ScrollArea::ScrollArea(const Size& SIZ, const vector<Widget*>& WGTS) :
-	Layout(SIZ, true, WGTS)
+ScrollArea::ScrollArea(const Size& SIZ) :
+	Layout(SIZ, true),
+	listY(0)
 {}
 
-void ScrollArea::dragSlider(int ypos) {
-	dragList((ypos - diffSliderMouseY - position().y) * poss[wgts.size()] / size().y);
+void ScrollArea::dragSlider(int mpos) {
+	setSlider(mpos - diffSliderMouseY);
+}
+
+void ScrollArea::setSlider(int ypos) {
+	dragList((ypos - position().y) * listL() / sliderL());
 }
 
 void ScrollArea::dragList(int ypos) {
@@ -88,27 +88,38 @@ void ScrollArea::scrollList(int ymov) {
 
 void ScrollArea::updateValues() {
 	Layout::updateValues();
-	int sizY = size().y;
-	
-	listL = (sizY < poss[wgts.size()]) ? poss[wgts.size()] - sizY : 0;
-	sliderH = (sizY < poss[wgts.size()]) ? sizY * sizY / poss[wgts.size()] : sizY;
 	checkListY();
 }
 
 int ScrollArea::barW() const {
-	return (sliderH == size().y) ? 0 : Default::sliderWidth;
+	return (sliderH() == size().y) ? 0 : Default::sliderWidth;
+}
+
+int ScrollArea::listL() const {
+	int sizY = size().y;
+	return (sizY < poss[wgts.size()]) ? poss[wgts.size()] - sizY : 0;
 }
 
 int ScrollArea::sliderY() const {
 	int sizY = size().y;
-	return (poss[wgts.size()] <= sizY) ? position().y : position().y + listY * sizY / poss[wgts.size()];
+	return (poss[wgts.size()] > sizY) ? position().y + listY * sliderL() / listL() : position().y;
+}
+
+int ScrollArea::sliderH() const {
+	int sizY = size().y;
+	return (sizY < poss[wgts.size()]) ? sizY * sizY / poss[wgts.size()] : sizY;
+}
+
+int ScrollArea::sliderL() const {
+	return size().y - sliderH();
 }
 
 void ScrollArea::checkListY() {
+	int lsl = listL();
 	if (listY < 0)
 		listY = 0;
-	else if (listY > listL)
-		listY = listL;
+	else if (listY > lsl)
+		listY = lsl;
 }
 
 vec2i ScrollArea::wgtPos(sizt id) const {
@@ -130,7 +141,7 @@ SDL_Rect ScrollArea::barRect() const {
 
 SDL_Rect ScrollArea::sliderRect() const {
 	int bw = barW();
-	return {position().x+size().x-bw, sliderY(), bw, sliderH};
+	return {position().x+size().x-bw, sliderY(), bw, sliderH()};
 }
 
 vec2t ScrollArea::visibleItems() const {
@@ -153,8 +164,10 @@ vec2t ScrollArea::visibleItems() const {
 	return interval;
 }
 
-Popup::Popup(const Size& SZX, const Size& SZY, bool VRT, const vector<Widget*>& WGTS) :
-	Layout(SZX, VRT, WGTS),
+// POPUP
+
+Popup::Popup(const Size& SZX, const Size& SZY, bool VRT) :
+	Layout(SZX, VRT),
 	sizeY(SZY)
 {}
 

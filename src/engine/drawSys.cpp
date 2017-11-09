@@ -26,7 +26,7 @@ void DrawSys::drawWidgets(Layout* layout, Popup* popup, Context* context) {
 	// draw popup if exists
 	colorDim = Default::colorNoDim;
 	if (popup) {
-		drawRect(popup->rect(), Default::colorRectangle);
+		drawRect(popup->rect(), Default::colorNormal);
 		drawLayout(popup, frame);
 	}
 
@@ -43,12 +43,14 @@ void DrawSys::passWidget(Widget* wgt, const SDL_Rect& frame) {
 		drawLineEdit(edt, frame);
 	else if (Label* lbl = dynamic_cast<Label*>(wgt))
 		drawLabel(lbl, frame);
-	else if (Checkbox* cbx = dynamic_cast<Checkbox*>(wgt))
-		drawCheckbox(cbx, frame);
-	else if (Colorbox* lbx = dynamic_cast<Colorbox*>(wgt))
-		drawColorbox(lbx, frame);
+	else if (CheckBox* cbx = dynamic_cast<CheckBox*>(wgt))
+		drawCheckBox(cbx, frame);
+	else if (ColorBox* lbx = dynamic_cast<ColorBox*>(wgt))
+		drawColorBox(lbx, frame);
+	else if (Slider* sld = dynamic_cast<Slider*>(wgt))
+		drawSlider(sld, frame);
 	else if (Button* but = dynamic_cast<Button*>(wgt))
-		drawRect(overlapRect(but->rect(), frame), Default::colorRectangle);
+		drawRect(overlapRect(but->rect(), frame), Default::colorNormal);
 	else if (GraphView* gpv = dynamic_cast<GraphView*>(wgt))
 		drawGraphView(gpv);
 	else if (ScrollArea* sa = dynamic_cast<ScrollArea*>(wgt))
@@ -71,20 +73,34 @@ void DrawSys::drawScrollArea(ScrollArea* box, const SDL_Rect& frame) {
 		passWidget(box->widget(i), rect);
 
 	// draw scroll bar
-	drawRect(overlapRect(box->barRect(), rect), Default::colorDarkened);
-	drawRect(overlapRect(box->sliderRect(), rect), Default::colorHighlighted);
+	drawRect(overlapRect(box->barRect(), rect), Default::colorDark);
+	drawRect(overlapRect(box->sliderRect(), rect), Default::colorLight);
 }
 
-void DrawSys::drawCheckbox(Checkbox* wgt, const SDL_Rect& frame) {
+void DrawSys::drawCheckBox(CheckBox* wgt, const SDL_Rect& frame) {
 	SDL_Rect rect = overlapRect(wgt->rect(), frame);
-	drawRect(rect, Default::colorRectangle);	// draw background
-	drawRect(overlapRect(wgt->boxRect(), rect), wgt->on ? Default::colorHighlighted : Default::colorDarkened);	// draw checkbox
+	drawRect(rect, Default::colorNormal);	// draw background
+	drawRect(overlapRect(wgt->boxRect(), rect), wgt->on ? Default::colorLight : Default::colorDark);	// draw checkbox
 }
 
-void DrawSys::drawColorbox(Colorbox* wgt, const SDL_Rect& frame) {
+void DrawSys::drawColorBox(ColorBox* wgt, const SDL_Rect& frame) {
 	SDL_Rect rect = overlapRect(wgt->rect(), frame);
-	drawRect(rect, Default::colorRectangle);	// draw background
+	drawRect(rect, Default::colorNormal);	// draw background
 	drawRect(overlapRect(wgt->boxRect(), rect), wgt->color);	// draw colorbox
+}
+
+void DrawSys::drawSlider(Slider* wgt, const SDL_Rect& frame) {
+	// draw background
+	SDL_Rect rect = overlapRect(wgt->rect(), frame);
+	drawRect(rect, Default::colorNormal);
+
+	// draw bar
+	SDL_Rect box = overlapRect(wgt->barRect(), frame);
+	drawRect(box, Default::colorDark);
+
+	// draw slider
+	box = overlapRect(wgt->sliderRect(), frame);
+	drawRect(box, Default::colorLight);
 }
 
 void DrawSys::drawLabel(Label* wgt, const SDL_Rect& frame) {
@@ -94,7 +110,7 @@ void DrawSys::drawLabel(Label* wgt, const SDL_Rect& frame) {
 	rect = overlapRect(rect, frame);
 
 	// draw background and text if exists
-	drawRect(rect, Default::colorRectangle);
+	drawRect(rect, Default::colorNormal);
 	if (!wgt->getText().empty())
 		drawText(wgt->getText(), wgt->textPos(), rect.h, Default::colorText, rect);
 }
@@ -102,21 +118,7 @@ void DrawSys::drawLabel(Label* wgt, const SDL_Rect& frame) {
 void DrawSys::drawLineEdit(LineEdit* wgt, const SDL_Rect& frame) {
 	drawLabel(wgt, frame);
 	if (World::scene()->getCaptureLE() == wgt)	// draw caret if wgt is the currently captured widget
-		drawRect(overlapRect(wgt->caretRect(), frame), Default::colorHighlighted);
-}
-
-void DrawSys::drawSlider(Slider* wgt, const SDL_Rect& frame) {
-	// draw background
-	SDL_Rect rect = overlapRect(wgt->rect(), frame);
-	drawRect(rect, Default::colorRectangle);
-
-	// draw bar
-	SDL_Rect box = overlapRect(wgt->barRect(), frame);
-	drawRect(box, Default::colorDarkened);
-
-	// draw slider
-	box = overlapRect(wgt->sliderRect(), frame);
-	drawRect(box, Default::colorHighlighted);
+		drawRect(overlapRect(wgt->caretRect(), frame), Default::colorLight);
 }
 
 void DrawSys::drawGraphView(GraphView* wgt) {
@@ -126,7 +128,7 @@ void DrawSys::drawGraphView(GraphView* wgt) {
 void DrawSys::drawContext(Context* con) {
 	// draw background
 	SDL_Rect rect = con->rect();
-	drawRect(rect, Default::colorRectangle);
+	drawRect(rect, Default::colorLight);
 	
 	// draw items
 	const vector<Context::Item>& items = con->getItems();

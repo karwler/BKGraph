@@ -20,11 +20,12 @@ public:
 	DrawSys* getDrawSys() { return drawSys; }
 	Scene* getScene() { return scene; }
 
-	const Settings& loadSettings() const { return sets; }
+	const Settings& getSettings() const { return sets; }
 	FontSet& getFontSet() { return sets.fontSet; }
 	void setRenderer(const string& name);
 	void setFullscreen(bool on);
 	void setFont(const string& font);
+	void setScrollSpeed(int ss) { sets.scrollSpeed = ss; }
 
 private:
 	sptr<Scene> scene;

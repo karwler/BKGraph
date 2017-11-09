@@ -5,7 +5,7 @@
 // container for other widgets
 class Layout : public Widget {
 public:
-	Layout(const Size& SIZ=Size(), bool VRT=true, const vector<Widget*>& WGTS={});
+	Layout(const Size& SIZ=Size(), bool VRT=true);
 	virtual ~Layout();
 
 	bool getVertical() const { return vertical; }
@@ -15,7 +15,6 @@ public:
 	const vector<Widget*>& getWidgets() const { return wgts; }
 	void setWidgets(const vector<Widget*>& widgets);
 	virtual void updateValues();
-	void clearWidgets();
 
 	virtual vec2i wgtPos(sizt id) const;
 	virtual vec2i wgtSize(sizt id) const;
@@ -29,17 +28,20 @@ protected:
 // places widgets vertically through which the user can scroll
 class ScrollArea : public Layout {
 public:
-	ScrollArea(const Size& SIZ=Size(), const vector<Widget*>& WGTS={});
+	ScrollArea(const Size& SIZ=Size());
 	virtual ~ScrollArea() {}
 
-	void dragSlider(int ypos);
+	void dragSlider(int mpos);
+	void setSlider(int ypos);
 	void dragList(int ypos);
 	void scrollList(int ymov);
 
-	virtual void updateValues();	// requires listH to be set
-	int barW() const;	// returns 0 if slider isn't needed
-	int sliderY() const;
-	int getSliderH() const { return sliderH; }
+	virtual void updateValues();
+	int barW() const;		// returns 0 if slider isn't needed
+	int listL() const;		// max list position aka listY
+	int sliderH() const;	// slider height
+	int sliderY() const;	// slider position
+	int sliderL() const;	// max slider position aka sliderY
 
 	virtual vec2i wgtPos(sizt id) const;
 	virtual vec2i wgtSize(sizt id) const;
@@ -50,9 +52,6 @@ public:
 	int diffSliderMouseY;	// space between slider and mouse position
 private:
 	int listY;		// position of the list
-	int sliderH;	// slider height
-	int listL;		// max list position
-	float motion;	// how much the list scrolls over time ()
 
 	void checkListY();	// check if listY is out of limits and correct if so
 };
@@ -60,7 +59,7 @@ private:
 // layout with background that is placed in the center of the screen
 class Popup : public Layout {
 public:
-	Popup(const Size& SZX=Size(), const Size& SZY=Size(), bool VRT=true, const vector<Widget*>& WGTS={});
+	Popup(const Size& SZX=Size(), const Size& SZY=Size(), bool VRT=true);
 	virtual ~Popup() {}
 
 	virtual vec2i position() const;

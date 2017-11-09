@@ -35,15 +35,6 @@ bool Scene::checkLayoutClick(const vec2i& mPos, uint8 mBut, Layout* box) {
 			if (Button* but = dynamic_cast<Button*>(it)) {
 				but->onClick(mBut);
 				return true;
-			} else if (Slider* sld = dynamic_cast<Slider*>(it)) {
-				if (mBut == SDL_BUTTON_LEFT) {
-					capture = sld;
-					int sx = sld->sliderX();
-					if (mPos.x < sx || mPos.x > sx + Default::sliderWidth)	// if mouse outside of slider but inside bar
-						sld->dragSlider(mPos.x - Default::sliderWidth/2);
-					sld->diffSliderMouseX = mPos.x - sx;	// get difference between mouse y and slider y
-				}
-				return true;
 			} else if (GraphView* gpv = dynamic_cast<GraphView*>(it)) {
 				// graph viewer click stuff
 				return true;
@@ -66,11 +57,10 @@ bool Scene::checkScrollAreaSliderClick(const vec2i& mPos, uint8 mBut, ScrollArea
 
 	if (mBut == SDL_BUTTON_LEFT) {
 		capture = box;
-
 		int sy = box->sliderY();
-		if (mPos.y < sy || mPos.y > sy + box->getSliderH())	// if mouse outside of slider but inside bar
-			box->dragSlider(mPos.y - box->getSliderH() /2);
-		box->diffSliderMouseY = mPos.y - sy;	// get difference between mouse y and slider y
+		if (mPos.y < sy || mPos.y > sy + box->sliderH())	// if mouse outside of slider but inside bar
+			box->setSlider(mPos.y - box->sliderH() /2);
+		box->diffSliderMouseY = mPos.y - box->sliderY();	// get difference between mouse y and slider y
 	}
 	return true;
 }
@@ -110,12 +100,12 @@ void Scene::onText(const char* text) {
 	static_cast<LineEdit*>(capture)->onText(text);	// text input should only run if line edit is being captured, therefore a cast check shouldn't be necessary
 }
 
-void Scene::switchScene(Layout* newLayout) {
-	// reset everything
+void Scene::clearScene() {
 	setCapture(nullptr);
 	popup = nullptr;
 	context = nullptr;
-	layout = newLayout;
+	layout.clear();
+	World::winSys()->getFontSet().clear();
 }
 
 void Scene::resizeScene() {
@@ -131,23 +121,21 @@ void Scene::resizeWidgets(Layout* box) {
 			resizeWidgets(lay);
 }
 
-void Scene::setCapture(LineEdit* cbox) {
+void Scene::setCapture(Widget* cbox) {
 	capture = cbox;
-	if (capture)
+	if (dynamic_cast<LineEdit*>(capture))
 		SDL_StartTextInput();
 	else
 		SDL_StopTextInput();
 }
 
 void Scene::setContext(Context* newContext) {
-	// set new context and set it's position to mouse's position
 	context = newContext;
-	context->position = World::winSys()->mousePos();
 
 	// correct context's position if it goes out of frame
 	vec2i res = World::winSys()->resolution();
 	correctContextPos(context->position.x, context->getSize().x, res.x);
-	correctContextPos(context->position.y, context->getSize().y, res.y);
+	correctContextPos(context->position.y, context->height(), res.y);
 }
 
 void Scene::correctContextPos(int& pos, int size, int res) {

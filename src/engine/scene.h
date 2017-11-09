@@ -16,20 +16,19 @@ public:
 	void onMouseWheel(int wMov);
 	void onText(const char* text);
 
-	void switchScene(Layout* newLayout);
+	void clearScene();
 	void resizeScene();
 	Program* getProgram() { return &program; }
 	LineEdit* getCaptureLE() { return dynamic_cast<LineEdit*>(capture); }
-	void setCapture(LineEdit* cbox);
+	void setCapture(Widget* cbox);
 
-	Layout* getLayout() { return layout; }
 	Context* getContext() { return context; }
 	void setContext(Context* newContext);	// also sets context's position
 
+	sptr<Layout> layout;
 	sptr<Popup> popup;
 private:
 	Program program;
-	sptr<Layout> layout;
 	sptr<Context> context;
 
 	Widget* capture;	// either pointer to LineEdit currently hogging all keyboard input or ScrollArea whichs slider or Slider which is currently being dragged. nullptr if nothing is being ca[tired or dragged

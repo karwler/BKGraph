@@ -67,6 +67,7 @@ using mfptr = double (*)(double);	// math function pointer
 
 // forward declaraions
 class Program;
+class Widget;
 class Layout;
 
 // directory separator
@@ -89,7 +90,7 @@ const int scrollSpeed = 8;
 // window
 const char windowTitle[] = "BKGraph";
 const vec2i windowPos(SDL_WINDOWPOS_UNDEFINED);
-const vec2i windowMinSize(400, 300);
+const vec2i windowMinSize(500, 300);
 const uint32 windowFlags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN;
 const uint32 rendererFlags = SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED;
 
@@ -99,9 +100,9 @@ const SDL_Scancode keyFullscreen = SDL_SCANCODE_F11;
 
 // colors
 const SDL_Color colorBackground = {10, 10, 10, 255};
-const SDL_Color colorRectangle = {90, 90, 90, 255};
-const SDL_Color colorHighlighted = {120, 120, 120, 255};
-const SDL_Color colorDarkened = {60, 60, 60, 255};
+const SDL_Color colorNormal = {90, 90, 90, 255};
+const SDL_Color colorLight = {120, 120, 120, 255};
+const SDL_Color colorDark = {60, 60, 60, 255};
 const SDL_Color colorText = {210, 210, 210, 255};
 const SDL_Color colorGraph = {255, 255, 255, 255};
 const SDL_Color colorPopupDim = {2, 2, 2, 1};
@@ -111,7 +112,6 @@ const SDL_Color colorNoDim = {1, 1, 1, 1};
 const char fileIcon[] = "icon.ico";
 const char fileSettings[] = "settings.ini";
 const char fileUsers[] = "users.ini";
-const int dirExecMaxBufferLength = 4096;
 
 // INI keywords
 const char iniKeywordFont[] = "font";

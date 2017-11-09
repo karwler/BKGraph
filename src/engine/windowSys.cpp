@@ -26,7 +26,7 @@ int WindowSys::start() {
 
 	// the loop :O
 	while (run) {
-		drawSys->drawWidgets(scene->getLayout(), scene->popup, scene->getContext());
+		drawSys->drawWidgets(scene->layout, scene->popup, scene->getContext());
 
 		SDL_Event event;
 		uint32 timeout = SDL_GetTicks() + Default::eventCheckTimeout;
@@ -88,6 +88,8 @@ void WindowSys::handleEvent(const SDL_Event& event) {
 		scene->onMouseMove(vec2i(event.motion.x, event.motion.y));
 	else if (event.type == SDL_MOUSEBUTTONDOWN)
 		scene->onMouseDown(vec2i(event.button.x, event.button.y), event.button.button);
+	else if (event.type == SDL_MOUSEBUTTONUP)
+		scene->onMouseUp(vec2i(event.button.x, event.button.y), event.button.button);
 	else if (event.type == SDL_MOUSEWHEEL)
 		scene->onMouseWheel(event.wheel.y*sets.scrollSpeed);
 	else if (event.type == SDL_TEXTINPUT)

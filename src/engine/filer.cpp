@@ -390,19 +390,31 @@ vector<char> Filer::listDrives() {
 #endif
 
 string Filer::getDirExec() {
-	// this function needs exveption handling
 	string path;
 #ifdef _WIN32
-	wchar buffer[Default::dirExecMaxBufferLength];
-	GetModuleFileNameW(0, buffer, Default::dirExecMaxBufferLength);
-	path = wtos(buffer);
+	for (DWORD blen=4096; blen<=4096*1024; blen*=4) {
+		wchar* buffer = new wchar[blen];
+		if (GetModuleFileNameW(0, buffer, blen) != blen) {
+			path = wtos(buffer);
+			delete[] buffer;
+			break;
+		}
+		delete[] buffer;
+	}
 #else
-	char buffer[Default::dirExecMaxBufferLength];
-	int len = readlink("/proc/self/exe", buffer, Default::dirExecMaxBufferLength-1);
-	buffer[len] = '\0';
-	path = buffer;
+	for (sizt blen=4096; blen<=4096*1024; blen*=4) {
+		char* buffer = new char[blen];
+		ssize_t len = readlink("/proc/self/exe", buffer, blen-1);
+		if (len != blen-1 && len != -1) {
+			buffer[len] = '\0';
+			path = buffer;
+			delete[] buffer;
+			break;
+		}
+		delete[] buffer;
+	}
 #endif
-	return getParentPath(path);
+	return path.empty() ? path : getParentPath(path);
 }
 
 string Filer::findFont(const string& font) {

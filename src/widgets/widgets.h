@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils/utils.h"
+#include "context.h"
 
 struct Size {
 	Size(int PIX);
@@ -57,10 +57,10 @@ protected:
 };
 
 // if you don't know what a checkbox is then I don't know what to tell ya
-class Checkbox : public Button {
+class CheckBox : public Button {
 public:
-	Checkbox(bool ON=false, void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size());
-	virtual ~Checkbox() {}
+	CheckBox(bool ON=false, void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size());
+	virtual ~CheckBox() {}
 
 	virtual void onClick(uint8 mBut);
 	SDL_Rect boxRect() const;
@@ -69,14 +69,43 @@ public:
 };
 
 // like checkbox except instead of being on or off it displays a color
-class Colorbox : public Button {
+class ColorBox : public Button {
 public:
-	Colorbox(const SDL_Color& CLR={0, 0, 0, 255}, void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size());
-	virtual ~Colorbox() {}
+	ColorBox(const SDL_Color& CLR={0, 0, 0, 255}, void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size());
+	virtual ~ColorBox() {}
 
 	SDL_Rect boxRect() const;
 
 	SDL_Color color;
+};
+
+// horizontal slider (maybe one day it'll be able to be vertical)
+class Slider : public Button {
+public:
+	Slider(int MIN=0, int MAX=255, int VAL=0, void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size());
+	virtual ~Slider() {}
+
+	virtual void onClick(uint8 mBut);
+	void dragSlider(int mpos);
+	void setSlider(int xpos);
+
+	int getMin() const { return min; }
+	void setMin(int MIN);
+	int getMax() const { return max; }
+	void setMax(int MAX);
+	int getVal() const { return val; }
+	void setVal(int VAL);
+
+	int sliderX() const;
+	int sliderL() const;
+	SDL_Rect barRect() const;
+	SDL_Rect sliderRect() const;
+
+private:
+	int min, max, val;
+	int diffSliderMouseX;
+
+	void checkVal();
 };
 
 // it's a little ass backwards but labels (aka a line of text) are buttons
@@ -120,9 +149,7 @@ private:
 	string oldText;
 
 	void addText(const string& str);
-	void delChar(bool current);
 
-	void moveCaret(bool right);
 	void checkCaret();	// if caret is out of range, set it to max position
 	void checkCaretRight();
 	void checkCaretLeft();
@@ -130,32 +157,4 @@ private:
 	void checkText();	// check if text is of the type specified. if not, remove not needed chars
 	void cleanIntString(string& str);
 	void cleanFloatString(string& str);
-};
-
-// horizontal slider (maybe one day it'll be able to be vertical)
-class Slider : public Widget {
-public:
-	Slider(int MIN=0, int MAX=255, int VAL=0, void (Program::*CAL)(Slider*)=nullptr, const Size& SIZ=Size());
-	virtual ~Slider() {}
-
-	void dragSlider(int mpos);
-	void onFinish();
-
-	int getMin() const { return min; }
-	void setMin(int MIN);
-	int getMax() const { return max; }
-	void setMax(int MAX);
-	int getVal() const { return val; }
-	void setVal(int VAL);
-
-	int sliderX() const;
-	SDL_Rect barRect() const;
-	SDL_Rect sliderRect() const;
-
-	int diffSliderMouseX;
-private:
-	int min, max, val;
-	void (Program::*call)(Slider*);
-
-	void checkVal();
 };

@@ -1,5 +1,4 @@
 #include "engine/world.h"
-#include "context.h"
 
 // CONTEXT ITEM
 
@@ -10,16 +9,17 @@ Context::Item::Item(const string& TXT, void(Program::* CAL)(Item*)) :
 
 // CONTEXT
 
-Context::Context(const vector<Item>& ITMS, const vec2i& POS) :
-	position(POS)	
+Context::Context(Widget* WGT, const vector<Item>& ITMS, const vec2i& POS, const vec2i& SIZ) :
+	position(POS),
+	size(SIZ),
+	widget(WGT)
 {
-	if (!ITMS.empty())
-		setItems(ITMS);
+	setItems(ITMS, SIZ.x);
 }
 
-void Context::setItems(const vector<Item>& newItems) {
+void Context::setItems(const vector<Item>& newItems, int sizeX) {
+	size.x = sizeX;
 	items.resize(newItems.size());
-	size = vec2i(0, items.size() * Default::itemHeight);
 	for (sizt i=0; i!=items.size(); i++) {
 		items[i] = newItems[i];
 		int len = World::winSys()->getFontSet().textLength(items[i].text, Default::itemHeight) + Default::textOffset*2;

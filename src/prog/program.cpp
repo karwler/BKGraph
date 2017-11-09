@@ -6,9 +6,11 @@
 Program::Program()
 {
 	vars.insert(make_pair("x", 0.0));	// parser needs x (remember to set it before calling Parser::solve)
-	for (Formula& it : Filer::loadUsers(vars))
-		if (parser.check(it.str))
-			forms.push_back(it);
+	forms = Filer::loadUsers(vars);
+}
+
+void Program::eventClosePopup(Button* but) {
+	World::scene()->popup.clear();
 }
 
 void Program::eventOpenForms(Button* but) {
@@ -32,25 +34,67 @@ void Program::eventExit(Button* but) {
 }
 
 void Program::eventSwitchGraphShow(Button* but) {
-	Checkbox* cbox = static_cast<Checkbox*>(but);
-	forms[cbox->getID()].show = cbox->on;
+	sizt id = static_cast<ProgForms*>(state.get())->getFormID(but);
+	forms[id].show = static_cast<CheckBox*>(but)->on;
 }
 
 void Program::eventOpenGraphColorPick(Button* but) {
-	Colorbox* lbox = static_cast<Colorbox*>(but);
-	// open popup
+	static_cast<ProgForms*>(state.get())->lastClicked = but;
+	World::scene()->popup = state->createPopupColorPick(static_cast<ColorBox*>(but)->color);
 }
 
 void Program::eventGraphFormulaChanged(Button* but) {
 	LineEdit* ledt = static_cast<LineEdit*>(but);
 	string str = ledt->getText();
 	if (parser.check(str)) {
-		forms[ledt->getID()].str = str;
+		sizt id = static_cast<ProgForms*>(state.get())->getFormID(ledt);
+		forms[id].str = str;
 		ledt->setText(str);
-	} else {
-		std::get<0>(static_cast<ProgForms*>(state.get())->getInteract(ledt->getID()))->on = false;
-		// open popup error (formula invalid)
-	}
+	} else
+		World::scene()->popup = state->createPopupMessage("Invalid formula.");
+}
+
+void Program::eventOpenContextFormula(Button* but) {
+	vector<Context::Item> items = {
+		Context::Item("Delete", &Program::eventDelFormula),
+		Context::Item("Add Formula", &Program::eventAddFormula)
+	};
+	World::scene()->setContext(new Context(but, items, World::winSys()->mousePos()));
+}
+
+void Program::eventAddFormula(Context::Item* item) {
+	forms.push_back(Formula());
+	setState(new ProgForms);
+}
+
+void Program::eventDelFormula(Context::Item* item) {
+	sizt id = static_cast<ProgForms*>(state.get())->getFormID(World::scene()->getContext()->getWidget());
+	forms.erase(forms.begin()+id);
+
+	setState(new ProgForms);
+}
+
+void Program::eventGraphColorPickRed(Button* but) {
+	static_cast<ColorBox*>(but->getParent()->widget(0))->color.r = static_cast<Slider*>(but)->getVal();
+}
+
+void Program::eventGraphColorPickGreen(Button* but) {
+	static_cast<ColorBox*>(but->getParent()->widget(0))->color.g = static_cast<Slider*>(but)->getVal();
+}
+
+void Program::eventGraphColorPickBlue(Button* but) {
+	static_cast<ColorBox*>(but->getParent()->widget(0))->color.b = static_cast<Slider*>(but)->getVal();
+}
+
+void Program::eventGraphColorPickAlpha(Button* but) {
+	static_cast<ColorBox*>(but->getParent()->widget(0))->color.a = static_cast<Slider*>(but)->getVal();
+}
+
+void Program::eventGraphColorPickConfirm(Button* but) {
+	ProgForms* fstate = static_cast<ProgForms*>(state.get());
+	sizt id = static_cast<ProgForms*>(state.get())->getFormID(fstate->lastClicked);
+	forms[id].color = static_cast<ColorBox*>(World::scene()->popup->widget(0))->color;
+	setState(new ProgForms);
 }
 
 void Program::eventVarRename(Button* but) {
@@ -58,25 +102,81 @@ void Program::eventVarRename(Button* but) {
 	if (wordValid(ledt->getText())) {
 		vars.insert(make_pair(ledt->getText(), vars[ledt->getOldText()]));
 		vars.erase(ledt->getOldText());
-	} else {
-		// open popup error (name invalid)
-	}
+	} else
+		World::scene()->popup = state->createPopupMessage("Invalid name.");
 }
 
 void Program::eventVarRevalue(Button* but) {
-	LineEdit* ledt = static_cast<LineEdit*>(but);
-	vars[std::get<0>(static_cast<ProgVars*>(state.get())->getInteract(ledt->getID()))->getText()] = stod(ledt->getText());
+	const string& key = static_cast<ProgVars*>(state.get())->getVarKey(but);
+	vars[key] = stod(static_cast<LineEdit*>(but)->getText());
+}
+
+void Program::eventOpenContextVariable(Button* but) {
+	vector<Context::Item> items = {
+		Context::Item("Delete", &Program::eventDelVariable),
+		Context::Item("Add Variable", &Program::eventAddVariable)
+	};
+	World::scene()->setContext(new Context(but, items, World::winSys()->mousePos()));
+}
+
+void Program::eventAddVariable(Context::Item* item) {
+	pair<string, double> var("a", 0.0);
+	sizt i = 0;
+	while (!wordValid(var.first)) {	// find name for new variable
+		if (var.first[i] == 'z')
+			var.first[i] = 'A';
+		else if (var.first[i] == 'Z') {
+			var.first += 'a';
+			i++;
+		} else
+			var.first[i]++;
+	}
+
+	vars.insert(var);
+	setState(new ProgVars);
+}
+
+void Program::eventDelVariable(Context::Item* item) {
+	const string& key = static_cast<ProgVars*>(state.get())->getVarKey(World::scene()->getContext()->getWidget());
+	vars.erase(key);
+
+	setState(new ProgVars);
+}
+
+void Program::eventSettingFont(Button* but) {
+	World::winSys()->setFont(static_cast<LineEdit*>(but)->getText());
+}
+
+void Program::eventSettingFullscreen(Button* but) {
+	World::winSys()->setFullscreen(static_cast<CheckBox*>(but)->on);
+}
+
+void Program::eventSettingRendererOpen(Button* but) {
+	vector<string> rnds = WindowSys::getAvailibleRenderers();
+	vector<Context::Item> items(rnds.size());
+	for (sizt i=0; i!=items.size(); i++)
+		items[i] = Context::Item(rnds[i], &Program::eventSettingRendererPick);
+	World::scene()->setContext(new Context(but, items, but->position(), but->size()));
+}
+
+void Program::eventSettingRendererPick(Context::Item* item) {
+	static_cast<Label*>(World::scene()->getContext()->getWidget())->setText(item->text);
+	World::winSys()->setRenderer(item->text);
+}
+
+void Program::eventSettingScrollSpeed(Button* but) {
+	World::winSys()->setScrollSpeed(stoi(static_cast<LineEdit*>(but)->getText()));
 }
 
 void Program::setState(ProgState* newState) {
 	state = newState;
-	World::winSys()->getFontSet().clear();
-	World::scene()->switchScene(state->createLayout());
+	World::scene()->clearScene();
+	World::scene()->layout = state->createLayout();
 }
 
 bool Program::wordValid(const string& str) {
 	for (char c : str)
 		if (c < 'A' || c > 'z' || (c > 'Z' && c < 'a' && c != '_'))	// only letters and underscode allowed
 			return false;
-	return Default::parserConsts.count(str) == 0 && vars.count(str) == 0 && Default::parserFuncs.count(str) == 0;	// no already existing words
+	return !str.empty() && Default::parserConsts.count(str) == 0 && vars.count(str) == 0 && Default::parserFuncs.count(str) == 0;	// no empty or already existing words
 }

@@ -30,17 +30,3 @@ inline string btos(bool b) { return b ? "true" : "false"; }
 bool inRect(const SDL_Rect& rect, const vec2i& point);
 SDL_Rect cropRect(SDL_Rect& rect, const SDL_Rect& frame);	// crop rect so it fits in the frame (aka set rect to the area where they overlap) and return how much was cut off
 SDL_Rect overlapRect(const SDL_Rect& a, const SDL_Rect& b);	// same as above except it returns the overlap instead of the crop
-
-// pointer container cleaners
-template <typename T>
-void erase(vector<T*>& vec, sizt i) {
-	delete vec[i];
-	vec.erase(vec.begin() + i);
-}
-
-template <typename T>
-void clear(vector<T*>& vec) {
-	for (T* it : vec)
-		delete it;
-	vec.clear();
-}

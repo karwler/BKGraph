@@ -16,11 +16,11 @@ private:
 	void passWidget(Widget* wgt, const SDL_Rect& frame);
 	void drawLayout(Layout* box, const SDL_Rect& frame);
 	void drawScrollArea(ScrollArea* box, const SDL_Rect& frame);
-	void drawCheckbox(Checkbox* wgt, const SDL_Rect& frame);
-	void drawColorbox(Colorbox* wgt, const SDL_Rect& frame);
+	void drawCheckBox(CheckBox* wgt, const SDL_Rect& frame);
+	void drawColorBox(ColorBox* wgt, const SDL_Rect& frame);
+	void drawSlider(Slider* wgt, const SDL_Rect& frame);
 	void drawLabel(Label* wgt, const SDL_Rect& frame);
 	void drawLineEdit(LineEdit* wgt, const SDL_Rect& frame);
-	void drawSlider(Slider* wgt, const SDL_Rect& frame);
 	void drawGraphView(GraphView* wgt);
 	void drawContext(Context* con);
 

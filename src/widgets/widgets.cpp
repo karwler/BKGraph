@@ -64,14 +64,14 @@ void Button::onClick(uint8 mBut) {
 		(World::program()->*rcall)(this);
 }
 
-// CHECKBOX
+// CHECK BOX
 
-Checkbox::Checkbox(bool ON, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ) :
+CheckBox::CheckBox(bool ON, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ) :
 	Button(LCL, RCL, SIZ),
 	on(ON)
 {}
 
-void Checkbox::onClick(uint8 mBut) {
+void CheckBox::onClick(uint8 mBut) {
 	if (mBut == SDL_BUTTON_LEFT && lcall) {
 		on = !on;
 		(World::program()->*lcall)(this);
@@ -79,23 +79,101 @@ void Checkbox::onClick(uint8 mBut) {
 		(World::program()->*rcall)(this);
 }
 
-SDL_Rect Checkbox::boxRect() const {
+SDL_Rect CheckBox::boxRect() const {
 	vec2i pos = position();
-	vec2i siz = size() / 2;
-	return {pos.x+siz.x/2, pos.y+siz.y/2, siz.x, siz.y};
+	vec2i siz = size();
+	int margin = (siz.x > siz.y) ? siz.y/4 : siz.x/4;
+	return {pos.x+margin, pos.y+margin, siz.x-margin*2, siz.y-margin*2};
 }
 
-// COLORBOX
+// COLOR BOX
 
-Colorbox::Colorbox(const SDL_Color& CLR, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ) :
+ColorBox::ColorBox(const SDL_Color& CLR, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ) :
 	Button(LCL, RCL, SIZ),
 	color(CLR)
 {}
 
-SDL_Rect Colorbox::boxRect() const {
+SDL_Rect ColorBox::boxRect() const {
 	vec2i pos = position();
-	vec2i siz = size() / 2;
-	return {pos.x+siz.x/2, pos.y+siz.y/2, siz.x, siz.y};
+	vec2i siz = size();
+	int margin = (siz.x > siz.y) ? siz.y/4 : siz.x/4;
+	return {pos.x+margin, pos.y+margin, siz.x-margin*2, siz.y-margin*2};
+}
+
+// SLIDER
+
+Slider::Slider(int MIN, int MAX, int VAL, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ) :
+	Button(LCL, RCL, SIZ),
+	min(MIN),
+	max(MAX),
+	val(VAL)
+{}
+
+void Slider::onClick(uint8 mBut) {
+	if (mBut == SDL_BUTTON_LEFT) {
+		World::scene()->setCapture(this);
+		vec2i mPos = World::winSys()->mousePos();
+		int sx = sliderX();
+
+		if (mPos.x < sx || mPos.x > sx + Default::sliderWidth)	// if mouse outside of slider but inside bar
+			setSlider(mPos.x - Default::sliderWidth/2);
+		diffSliderMouseX = mPos.x - sliderX();	// get difference between mouse x and slider x
+	} else if (mBut == SDL_BUTTON_RIGHT && rcall)
+		(World::program()->*rcall)(this);
+}
+
+void Slider::dragSlider(int mpos) {
+	setSlider(mpos - diffSliderMouseX);
+}
+
+void Slider::setSlider(int xpos) {
+	val = (xpos - position().x) * max / sliderL();
+	checkVal();
+
+	if (lcall)
+		(World::program()->*lcall)(this);
+}
+
+void Slider::setMin(int MIN) {
+	min = MIN;
+	checkVal();
+}
+
+void Slider::setMax(int MAX) {
+	max = MAX;
+	checkVal();
+}
+
+void Slider::setVal(int VAL) {
+	val = VAL;
+	checkVal();
+}
+
+int Slider::sliderX() const {
+	return position().x + val * sliderL() / max;
+}
+
+int Slider::sliderL() const {
+	return size().x - Default::sliderWidth;
+}
+
+SDL_Rect Slider::barRect() const {
+	vec2i pos = position();
+	vec2i siz = size();
+	return {pos.x, pos.y + siz.y/4, siz.x, siz.y/2};
+}
+
+SDL_Rect Slider::sliderRect() const {
+	vec2i pos = position();
+	vec2i siz = size();
+	return {sliderX(), pos.y, Default::sliderWidth, siz.y};
+}
+
+void Slider::checkVal() {
+	if (val < min)
+		val = min;
+	else if (val > max)
+		val = max;
 }
 
 // LABEL
@@ -134,23 +212,27 @@ void LineEdit::onClick(uint8 mBut) {
 	if (mBut == SDL_BUTTON_LEFT) {
 		World::scene()->setCapture(this);
 		cpos = text.length();
-	} else if (mBut == SDL_BUTTON_RIGHT)
+	} else if (mBut == SDL_BUTTON_RIGHT && rcall)
 		(World::program()->*rcall)(this);
 }
 
 void LineEdit::onKeypress(const SDL_Keysym& key) {
 	if (key.scancode == SDL_SCANCODE_RIGHT) {
-		moveCaret(true);
+		cpos = (cpos == text.length()) ? 0 : cpos+1;
 		checkCaretRight();
 	} else if (key.scancode == SDL_SCANCODE_LEFT) {
-		moveCaret(false);
+		cpos = (cpos == 0) ? text.length() : cpos-1;
 		checkCaretLeft();
 	} else if (key.scancode == SDL_SCANCODE_BACKSPACE) {
-		delChar(false);
-		checkCaretLeft();
-	} else if (key.scancode == SDL_SCANCODE_DELETE)
-		delChar(true);
-	else if (key.scancode == SDL_SCANCODE_RETURN)
+		if (cpos != 0) {
+			cpos--;
+			text.erase(cpos, 1);
+			checkCaretLeft();
+		}
+	} else if (key.scancode == SDL_SCANCODE_DELETE) {
+		if (cpos != text.length())
+			text.erase(cpos, 1);
+	} else if (key.scancode == SDL_SCANCODE_RETURN)
 		confirm();
 	else if (key.scancode == SDL_SCANCODE_ESCAPE)
 		cancel();
@@ -163,7 +245,7 @@ void LineEdit::onText(const char* text) {
 
 vec2i LineEdit::textPos() const {
 	vec2i pos = position();
-	return vec2i(pos.x-textOfs, pos.y);
+	return vec2i(pos.x-textOfs+Default::textOffset, pos.y);
 }
 
 void LineEdit::setText(const string& str) {
@@ -203,23 +285,6 @@ void LineEdit::addText(const string& str) {
 	text.insert(cpos, str);
 	cpos += str.length();
 	checkText();
-}
-
-void LineEdit::delChar(bool current) {
-	if (current) {
-		if (cpos != text.length())
-			text.erase(cpos, 1);
-	} else if (cpos != 0) {
-		cpos--;
-		text.erase(cpos, 1);
-	}
-}
-
-void LineEdit::moveCaret(bool right) {
-	if (right)
-		cpos = (cpos == text.length()) ? 0 : cpos+1;
-	else
-		cpos = (cpos == 0) ? text.length() : cpos-1;
 }
 
 void LineEdit::checkCaret() {
@@ -270,64 +335,4 @@ void LineEdit::cleanFloatString(string& str) {
 				i--;
 			}
 		}
-}
-
-// SLIDER
-
-Slider::Slider(int MIN, int MAX, int VAL, void (Program::*CAL)(Slider*), const Size& SIZ) :
-	Widget(SIZ),
-	min(MIN),
-	max(MAX),
-	val(VAL)
-{}
-
-void Slider::dragSlider(int mpos) {
-	int pos = position().x;
-	int siz = size().x;
-
-	val = (mpos - diffSliderMouseX - pos) * max / (siz - Default::sliderWidth);
-	checkVal();
-}
-
-void Slider::onFinish() {
-	if (call)
-		(World::program()->*call)(this);
-}
-
-void Slider::setMin(int MIN) {
-	min = MIN;
-	checkVal();
-}
-
-void Slider::setMax(int MAX) {
-	max = MAX;
-	checkVal();
-}
-
-void Slider::setVal(int VAL) {
-	val = VAL;
-	checkVal();
-}
-
-int Slider::sliderX() const {
-	return position().x + val * (size().x-Default::sliderWidth) / max;
-}
-
-SDL_Rect Slider::barRect() const {
-	vec2i pos = position();
-	vec2i siz = size();
-	return {pos.x, pos.y + siz.y/4, siz.x, siz.y/2};
-}
-
-SDL_Rect Slider::sliderRect() const {
-	vec2i pos = position();
-	vec2i siz = size();
-	return {sliderX(), pos.y, Default::sliderWidth, siz.y};
-}
-
-void Slider::checkVal() {
-	if (val < min)
-		val = min;
-	else if (val > max)
-		val = max;
 }
