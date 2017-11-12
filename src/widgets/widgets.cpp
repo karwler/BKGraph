@@ -35,6 +35,16 @@ void Widget::setParent(Layout* PNT, sizt ID) {
 	id = ID;
 }
 
+void Widget::setRelSize(int pix) {
+	relSize.set(pix);
+	parent->updateValues();
+}
+
+void Widget::setRelSize(float prc) {
+	relSize.set(prc);
+	parent->updateValues();
+}
+
 vec2i Widget::position() const {
 	return parent ? parent->wgtPos(id) : 0;
 }

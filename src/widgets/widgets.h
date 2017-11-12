@@ -20,18 +20,15 @@ struct Size {
 class Widget {
 public:
 	Widget(const Size& SIZ=Size());	// parent and id should be set in Layout's setWidgets
-	virtual ~Widget() {};
+	virtual ~Widget() {}
 
 	Layout* getParent() const { return parent; }
 	sizt getID() const { return id; }
 	void setParent(Layout* PNT, sizt ID);
 
 	const Size& getRelSize() const { return relSize; }
-	template <typename T>
-	void setRelSize(T val) {
-		relSize.set(val);
-		parent->updateValues();
-	}
+	void setRelSize(int pix);
+	void setRelSize(float prc);
 
 	virtual vec2i position() const;
 	virtual vec2i size() const;

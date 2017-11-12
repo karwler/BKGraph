@@ -3,4 +3,3 @@
 GraphView::GraphView(const Size& SIZ) :
 	Widget(SIZ)
 {}
-GraphView::~GraphView() {}

@@ -6,7 +6,7 @@
 class GraphView : public Widget {
 public:
 	GraphView(const Size& SIZ=Size());
-	virtual ~GraphView();
+	virtual ~GraphView() {}
 
 private:
 	

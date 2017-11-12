@@ -79,7 +79,7 @@ void Scene::onMouseUp(const vec2i& mPos, uint8 mBut) {
 }
 
 void Scene::onMouseWheel(int wMov) {
-	if (ScrollArea* box = checkMouseOverScrollArea(World::winSys()->mousePos(), popup ? static_cast<Layout*>(popup) : layout))	// if mouse is over a ScrollArea scroll it
+	if (ScrollArea* box = checkMouseOverScrollArea(World::winSys()->mousePos(), popup.get() ? popup : layout))	// if mouse is over a ScrollArea scroll it
 		box->scrollList(wMov*Default::scrollFactorWheel);
 }
 
