@@ -19,11 +19,9 @@ bool findChar(const string& str, char c) {
 }
 
 bool findChar(const string& str, char c, sizt& id) {
-	for (sizt i=0; i!=str.length(); i++)
-		if (str[i] == c) {
-			id = i;
+	for (id=0; id!=str.length(); id++)
+		if (str[id] == c)
 			return true;
-		}
 	return false;
 }
 
@@ -42,6 +40,52 @@ vector<string> getWords(const string& line, char splitter) {
 			start = i;	// new starting point for next word
 		}
 	return words;
+}
+
+sizt jumpToWordStart(const string& str, sizt i, char splitter) {
+	if (str[i] != splitter && i != 0 && str[i-1] == splitter)	// skip if first letter of word
+		i--;
+	while (str[i] == splitter && i != 0)	// skip first spaces
+		i--;
+	while (str[i] != splitter && i != 0)	// skip word
+		i--;
+	return (i == 0) ? i : i+1;	// correct position if necessary
+}
+
+sizt jumpToWordEnd(const string& str, sizt i, char splitter) {
+	while (str[i] == splitter && i != str.length())	// skip first spaces
+		i++;
+	while (str[i] != splitter && i != str.length())	// skip word
+		i++;
+	return i;
+}
+
+void cleanString(string& str, TextType type) {
+	if (type == TextType::integer)
+		cleanIntString(str);
+	else if (type == TextType::floating)
+		cleanFloatString(str);
+}
+
+void cleanIntString(string& str) {
+	for (sizt i=0; i!=str.length(); i++)
+		if (str[i] < '0' || str[i] > '9') {
+			str.erase(i, 1);
+			i--;
+		}
+}
+
+void cleanFloatString(string& str) {
+	bool foundDot = false;
+	for (sizt i=0; i!=str.length(); i++)
+		if (str[i] < '0' || str[i] > '9') {
+			if (str[i] == '.' && !foundDot)
+				foundDot = true;
+			else {
+				str.erase(i, 1);
+				i--;
+			}
+		}
 }
 
 string wtos(const wstring& wstr) {

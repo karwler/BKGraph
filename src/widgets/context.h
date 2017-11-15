@@ -13,7 +13,9 @@ public:
 	};
 
 	Context(Widget* WGT=nullptr, const vector<Item>& ITMS={}, const vec2i& POS=0, const vec2i& SIZ=vec2i(0, Default::itemHeight));
-	
+
+	void onClick(const vec2i& mPos, uint8 mBut);
+
 	const vec2i getSize() const { return size; }
 	int height() const { return size.y * items.size(); }
 	SDL_Rect rect() const { return {position.x, position.y, size.x, height()}; }

@@ -22,6 +22,12 @@ public:
 	Widget(const Size& SIZ=Size());	// parent and id should be set in Layout's setWidgets
 	virtual ~Widget() {}
 
+	virtual void drawSelf(const SDL_Rect& frame) {}	// calls appropriate drawing function(s) in DrawSys
+	virtual bool onClick(const vec2i& mPos, uint8 mBut) { return false; }	// returns true if interaction occurs
+	virtual void onDrag(const vec2i& mPos) {}	// mouse move while left button down
+	virtual void onUndrag(uint8 mBut) {}	// get's called on mouse button up if instance is Scene's capture
+	virtual void onResize() {}	// for updating values when window size changed
+
 	Layout* getParent() const { return parent; }
 	sizt getID() const { return id; }
 	void setParent(Layout* PNT, sizt ID);
@@ -46,7 +52,8 @@ public:
 	Button(void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size());
 	virtual ~Button() {}
 
-	virtual void onClick(uint8 mBut);
+	virtual void drawSelf(const SDL_Rect& frame);
+	virtual bool onClick(const vec2i& mPos, uint8 mBut);
 
 protected:
 	void (Program::*lcall)(Button*);
@@ -59,7 +66,9 @@ public:
 	CheckBox(bool ON=false, void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size());
 	virtual ~CheckBox() {}
 
-	virtual void onClick(uint8 mBut);
+	virtual void drawSelf(const SDL_Rect& frame);
+	virtual bool onClick(const vec2i& mPos, uint8 mBut);
+
 	SDL_Rect boxRect() const;
 
 	bool on;
@@ -68,8 +77,10 @@ public:
 // like checkbox except instead of being on or off it displays a color
 class ColorBox : public Button {
 public:
-	ColorBox(const SDL_Color& CLR={0, 0, 0, 255}, void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size());
+	ColorBox(SDL_Color CLR={0, 0, 0, 255}, void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size());
 	virtual ~ColorBox() {}
+
+	virtual void drawSelf(const SDL_Rect& frame);
 
 	SDL_Rect boxRect() const;
 
@@ -82,10 +93,12 @@ public:
 	Slider(int MIN=0, int MAX=255, int VAL=0, void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size());
 	virtual ~Slider() {}
 
-	virtual void onClick(uint8 mBut);
-	void dragSlider(int mpos);
-	void setSlider(int xpos);
+	virtual void drawSelf(const SDL_Rect& frame);
+	virtual bool onClick(const vec2i& mPos, uint8 mBut);
+	virtual void onDrag(const vec2i& mPos);
+	virtual void onUndrag(uint8 mBut);
 
+	void setSlider(int xpos);
 	int getMin() const { return min; }
 	void setMin(int MIN);
 	int getMax() const { return max; }
@@ -111,6 +124,8 @@ public:
 	Label(const string& TXT="", void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size(), Alignment ALG=Alignment::left);
 	virtual ~Label() {}
 
+	virtual void drawSelf(const SDL_Rect& frame);
+
 	const string& getText() const { return text; }
 	virtual vec2i textPos() const;
 	virtual void setText(const string& str) { text = str; }
@@ -126,9 +141,9 @@ public:
 	LineEdit(const string& TXT="", void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size(), TextType TYP=TextType::text);
 	virtual ~LineEdit() {}
 
-	virtual void onClick(uint8 mBut);
+	virtual bool onClick(const vec2i& mPos, uint8 mBut);
 	virtual void onKeypress(const SDL_Keysym& key);
-	void onText(const char* text);
+	void onText(string str);
 
 	const string& getOldText() const { return oldText; }
 	virtual vec2i textPos() const;
@@ -145,13 +160,6 @@ private:
 	TextType textType;
 	string oldText;
 
-	void addText(const string& str);
-
-	void checkCaret();	// if caret is out of range, set it to max position
-	void checkCaretRight();
-	void checkCaretLeft();
-
-	void checkText();	// check if text is of the type specified. if not, remove not needed chars
-	void cleanIntString(string& str);
-	void cleanFloatString(string& str);
+	int caretPos() const;	// caret's relative x position
+	void checkTextOffset();
 };

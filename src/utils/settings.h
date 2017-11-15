@@ -4,7 +4,7 @@
 
 // I guess this is kind of part of the settings
 struct Formula {
-	Formula(const string& STR="", bool SHW=true, const SDL_Color& CLR=Default::colorGraph);
+	Formula(const string& STR="", bool SHW=true, SDL_Color CLR=Default::colorGraph);
 
 	bool show;
 	SDL_Color color;

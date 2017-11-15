@@ -37,12 +37,12 @@ void Widget::setParent(Layout* PNT, sizt ID) {
 
 void Widget::setRelSize(int pix) {
 	relSize.set(pix);
-	parent->updateValues();
+	parent->onResize();
 }
 
 void Widget::setRelSize(float prc) {
 	relSize.set(prc);
-	parent->updateValues();
+	parent->onResize();
 }
 
 vec2i Widget::position() const {
@@ -67,11 +67,16 @@ Button::Button(void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), con
 	rcall(RCL)
 {}
 
-void Button::onClick(uint8 mBut) {
+void Button::drawSelf(const SDL_Rect& frame) {
+	World::drawSys()->drawRect(overlapRect(rect(), frame), Default::colorNormal);
+}
+
+bool Button::onClick(const vec2i& mPos, uint8 mBut) {
 	if (mBut == SDL_BUTTON_LEFT && lcall)
 		(World::program()->*lcall)(this);
 	else if (mBut == SDL_BUTTON_RIGHT && rcall)
 		(World::program()->*rcall)(this);
+	return true;
 }
 
 // CHECK BOX
@@ -81,12 +86,18 @@ CheckBox::CheckBox(bool ON, void (Program::*LCL)(Button*), void (Program::*RCL)(
 	on(ON)
 {}
 
-void CheckBox::onClick(uint8 mBut) {
+void CheckBox::drawSelf(const SDL_Rect& frame) {
+	World::drawSys()->drawRect(overlapRect(rect(), frame), Default::colorNormal);	// draw background
+	World::drawSys()->drawRect(overlapRect(boxRect(), frame), on ? Default::colorLight : Default::colorDark);	// draw checkbox
+}
+
+bool CheckBox::onClick(const vec2i& mPos, uint8 mBut) {
 	if (mBut == SDL_BUTTON_LEFT && lcall) {
 		on = !on;
 		(World::program()->*lcall)(this);
 	} else if (mBut == SDL_BUTTON_RIGHT && rcall)
 		(World::program()->*rcall)(this);
+	return true;
 }
 
 SDL_Rect CheckBox::boxRect() const {
@@ -98,10 +109,15 @@ SDL_Rect CheckBox::boxRect() const {
 
 // COLOR BOX
 
-ColorBox::ColorBox(const SDL_Color& CLR, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ) :
+ColorBox::ColorBox(SDL_Color CLR, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ) :
 	Button(LCL, RCL, SIZ),
 	color(CLR)
 {}
+
+void ColorBox::drawSelf(const SDL_Rect& frame) {
+	World::drawSys()->drawRect(overlapRect(rect(), frame), Default::colorNormal);	// draw background
+	World::drawSys()->drawRect(overlapRect(boxRect(), frame), color);	// draw colorbox
+}
 
 SDL_Rect ColorBox::boxRect() const {
 	vec2i pos = position();
@@ -119,21 +135,29 @@ Slider::Slider(int MIN, int MAX, int VAL, void (Program::*LCL)(Button*), void (P
 	val(VAL)
 {}
 
-void Slider::onClick(uint8 mBut) {
+void Slider::drawSelf(const SDL_Rect& frame) {
+	World::drawSys()->drawSlider(this, frame);
+}
+
+bool Slider::onClick(const vec2i& mPos, uint8 mBut) {
 	if (mBut == SDL_BUTTON_LEFT) {
 		World::scene()->setCapture(this);
-		vec2i mPos = World::winSys()->mousePos();
 		int sx = sliderX();
-
 		if (mPos.x < sx || mPos.x > sx + Default::sliderWidth)	// if mouse outside of slider but inside bar
 			setSlider(mPos.x - Default::sliderWidth/2);
 		diffSliderMouseX = mPos.x - sliderX();	// get difference between mouse x and slider x
 	} else if (mBut == SDL_BUTTON_RIGHT && rcall)
 		(World::program()->*rcall)(this);
+	return true;
 }
 
-void Slider::dragSlider(int mpos) {
-	setSlider(mpos - diffSliderMouseX);
+void Slider::onDrag(const vec2i& mPos) {
+	setSlider(mPos.x - diffSliderMouseX);
+}
+
+void Slider::onUndrag(uint8 mBut) {
+	if (mBut == SDL_BUTTON_LEFT)	// if dragging slider stop dragging slider
+		World::scene()->setCapture(nullptr);
 }
 
 void Slider::setSlider(int xpos) {
@@ -194,52 +218,65 @@ Label::Label(const string& TXT, void (Program::*LCL)(Button*), void (Program::*R
 	text(TXT)
 {}
 
+void Label::drawSelf(const SDL_Rect& frame) {
+	World::drawSys()->drawLabel(this, frame);
+}
+
 vec2i Label::textPos() const {
 	SDL_Rect rct = rect();
-	int len = World::winSys()->getFontSet().textLength(text, rct.h);
-
-	int xpos;
 	if (align == Alignment::left)
-		xpos = rct.x + Default::textOffset;
-	else if (align == Alignment::center)
-		xpos = rct.x + (rct.w-len)/2;
-	else	// Alignment::right
-		xpos = rct.x + rct.w - len - Default::textOffset;
-	return vec2i(xpos, rct.y);
+		return vec2i(rct.x + Default::textOffset, rct.y);
+	if (align == Alignment::center)
+		return vec2i(rct.x + (rct.w - World::winSys()->getFontSet().textLength(text, rct.h))/2, rct.y);
+	return vec2i(rct.x + rct.w - World::winSys()->getFontSet().textLength(text, rct.h) - Default::textOffset, rct.y);	// Alignment::right
 }
 
 // LINE EDITOR
 
 LineEdit::LineEdit(const string& TXT, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ, TextType TYP) :
 	Label(TXT, LCL, RCL, SIZ, Alignment::left),
-	textType(TYP),
-	textOfs(0)
+	textType(TYP)
 {
-	setText(TXT);	// sets cpos
+	setText(TXT);	// sets cpos and textOfs
 }
 
-void LineEdit::onClick(uint8 mBut) {
+bool LineEdit::onClick(const vec2i& mPos, uint8 mBut) {
 	if (mBut == SDL_BUTTON_LEFT) {
 		World::scene()->setCapture(this);
 		cpos = text.length();
 	} else if (mBut == SDL_BUTTON_RIGHT && rcall)
 		(World::program()->*rcall)(this);
+	return true;
 }
 
 void LineEdit::onKeypress(const SDL_Keysym& key) {
-	if (key.scancode == SDL_SCANCODE_RIGHT) {
-		cpos = (cpos == text.length()) ? 0 : cpos+1;
-		checkCaretRight();
-	} else if (key.scancode == SDL_SCANCODE_LEFT) {
-		cpos = (cpos == 0) ? text.length() : cpos-1;
-		checkCaretLeft();
-	} else if (key.scancode == SDL_SCANCODE_BACKSPACE) {
-		if (cpos != 0) {
+	if (key.scancode == SDL_SCANCODE_LEFT) {	// move caret left
+		if (key.mod & KMOD_LALT)	// if holding alt skip word, otherwise move by one
+			cpos = jumpToWordStart(text, cpos);
+		else if (key.mod & KMOD_CTRL)
+			cpos = 0;
+		else if (cpos != 0)
+			cpos--;
+		checkTextOffset();
+	} else if (key.scancode == SDL_SCANCODE_RIGHT) {	// move caret right
+		if (key.mod & KMOD_LALT)	// if holding alt skip word, otherwise move by one
+			cpos = jumpToWordEnd(text, cpos);
+		else if (key.mod & KMOD_CTRL)
+			cpos = text.length();
+		else if (cpos != text.length())
+			cpos++;
+		checkTextOffset();
+	} else if (key.scancode == SDL_SCANCODE_BACKSPACE) {	// delete left
+		if (key.mod & KMOD_LALT) {	// if holding alt delete word, otherwise delete character
+			sizt id = jumpToWordStart(text, cpos);
+			text.erase(id, cpos - id);
+			cpos = id;
+		} else if (cpos != 0) {
 			cpos--;
 			text.erase(cpos, 1);
-			checkCaretLeft();
 		}
-	} else if (key.scancode == SDL_SCANCODE_DELETE) {
+		checkTextOffset();
+	} else if (key.scancode == SDL_SCANCODE_DELETE) {	// delete right
 		if (cpos != text.length())
 			text.erase(cpos, 1);
 	} else if (key.scancode == SDL_SCANCODE_RETURN)
@@ -248,32 +285,41 @@ void LineEdit::onKeypress(const SDL_Keysym& key) {
 		cancel();
 }
 
-void LineEdit::onText(const char* text) {
-	addText(text);
-	checkCaretRight();
+void LineEdit::onText(string str) {
+	cleanString(str, textType);
+	text.insert(cpos, str);
+
+	cpos += str.length();
+	checkTextOffset();
 }
 
 vec2i LineEdit::textPos() const {
 	vec2i pos = position();
-	return vec2i(pos.x-textOfs+Default::textOffset, pos.y);
+	return vec2i(pos.x + textOfs + Default::textOffset, pos.y);
 }
 
 void LineEdit::setText(const string& str) {
+	oldText = text;
 	text = str;
+	cleanString(text, textType);
 	cpos = 0;
-	checkText();
+	textOfs = 0;
 }
 
 void LineEdit::setTextType(TextType type) {
 	textType = type;
-	checkText();
+	cleanString(text, textType);
+	if (cpos > text.length())
+		cpos = text.length();
 }
 
 SDL_Rect LineEdit::caretRect() const {
 	vec2i ps = position();
-	int height = size().y;
+	return {caretPos() + ps.x + Default::textOffset, ps.y, Default::caretWidth, size().y};
+}
 
-	return {World::winSys()->getFontSet().textLength(text.substr(0, cpos), height) - textOfs + ps.x, ps.y, Default::caretWidth, height};
+int LineEdit::caretPos() const {
+	return World::winSys()->getFontSet().textLength(text.substr(0, cpos), size().y) + textOfs;
 }
 
 void LineEdit::confirm() {
@@ -291,58 +337,13 @@ void LineEdit::cancel() {
 	setText(oldText);
 }
 
-void LineEdit::addText(const string& str) {
-	text.insert(cpos, str);
-	cpos += str.length();
-	checkText();
-}
+void LineEdit::checkTextOffset() {
+	int cp = caretPos();
+	int ce = cp + Default::caretWidth;
+	int sx = size().x;
 
-void LineEdit::checkCaret() {
-	if (cpos > text.length())
-		cpos = text.length();
-}
-
-void LineEdit::checkCaretRight() {
-	SDL_Rect caret = caretRect();
-	int diff = caret.x + caret.w - position().x - size().x;
-	if (diff > 0)
-		textOfs += diff;
-}
-
-void LineEdit::checkCaretLeft() {
-	SDL_Rect caret = caretRect();
-	int diff = position().x - caret.x;
-	if (diff > 0)
-		textOfs -= diff;
-}
-
-void LineEdit::checkText() {
-	if (textType == TextType::integer)
-		cleanIntString(text);
-	else if (textType == TextType::floating)
-		cleanFloatString(text);
-	else
-		return;
-	checkCaret();
-}
-
-void LineEdit::cleanIntString(string& str) {
-	for (sizt i=0; i!=str.length(); i++)
-		if (str[i] < '0' || str[i] > '9') {
-			str.erase(i, 1);
-			i--;
-		}
-}
-
-void LineEdit::cleanFloatString(string& str) {
-	bool foundDot = false;
-	for (sizt i=0; i!=str.length(); i++)
-		if (str[i] < '0' || str[i] > '9') {
-			if (str[i] == '.' && !foundDot)
-				foundDot = true;
-			else {
-				str.erase(i, 1);
-				i--;
-			}
-		}
+	if (cp < 0) {
+		textOfs -= cp;
+	} else if (ce > sx)
+		textOfs -= ce - sx;
 }

@@ -9,7 +9,7 @@ void ProgState::eventKeypress(const SDL_Keysym& key) {
 		eventBack();
 }
 
-Popup* ProgState::createPopupMessage(const string& msg) {
+Popup* ProgState::createPopupMessage(const string& msg, const vec2<Size>& size) {
 	vector<Widget*> a = {
 		new Widget(1.f),
 		new Label("Ok", &Program::eventClosePopup, nullptr, 1.f, Alignment::center),
@@ -23,12 +23,12 @@ Popup* ProgState::createPopupMessage(const string& msg) {
 		new Widget(10),
 		l
 	};
-	Popup* p = new Popup(0.5f, 0.5f);
+	Popup* p = new Popup(size);
 	p->setWidgets(b);
 	return p;
 }
 
-Popup* ProgState::createPopupColorPick(const SDL_Color& color) {
+Popup* ProgState::createPopupColorPick(SDL_Color color) {
 	vector<Widget*> a = {
 		new ColorBox(color),
 		new Slider(0, 255, color.r, &Program::eventGraphColorPickRed),
@@ -37,7 +37,7 @@ Popup* ProgState::createPopupColorPick(const SDL_Color& color) {
 		new Slider(0, 255, color.a, &Program::eventGraphColorPickAlpha),
 		new Label("Ok", &Program::eventGraphColorPickConfirm, nullptr, 1.f, Alignment::center)
 	};
-	Popup* p = new Popup(0.5f, 0.5f);
+	Popup* p = new Popup(vec2<Size>(0.5f, 0.5f));
 	p->setWidgets(a);
 	return p;
 }
@@ -138,7 +138,7 @@ Layout* ProgVars::createLayout() {
 			continue;
 
 		LineEdit* nm = new LineEdit(it.first, &Program::eventVarRename, &Program::eventOpenContextVariable);
-		Label* sp = new Label(" = ", nullptr, &Program::eventOpenContextVariable, 0.1f);
+		Label* sp = new Label("=", nullptr, &Program::eventOpenContextVariable, 0.1f, Alignment::center);
 		LineEdit* vl = new LineEdit(to_string(it.second), &Program::eventVarRevalue, &Program::eventOpenContextVariable, 1.f, TextType::floating);
 		
 		interacts.insert(make_pair(nm, it.first));

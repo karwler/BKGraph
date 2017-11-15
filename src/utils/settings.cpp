@@ -3,7 +3,7 @@
 
 // FORMULA
 
-Formula::Formula(const string& STR, bool SHW, const SDL_Color& CLR) :
+Formula::Formula(const string& STR, bool SHW, SDL_Color CLR) :
 	show(SHW),
 	color(CLR),
 	str(STR)

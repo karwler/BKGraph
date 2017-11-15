@@ -8,6 +8,9 @@ public:
 	GraphView(const Size& SIZ=Size());
 	virtual ~GraphView() {}
 
+	virtual void drawSelf(const SDL_Rect& frame);
+	virtual bool onClick(const vec2i& mPos, uint8 mBut);
+
 private:
 	
 };

@@ -13,26 +13,18 @@ Layout::~Layout() {
 		delete it;
 }
 
-void Layout::setVertical(bool yes) {
-	vertical = yes;
-	updateValues();
+void Layout::drawSelf(const SDL_Rect& frame) {
+	World::drawSys()->drawLayout(this, frame);
 }
 
-void Layout::setWidgets(const vector<Widget*>& widgets) {
-	for (Widget* it : wgts)	// get rid of previously existing widgets
-		delete it;
-	
-	wgts.resize(widgets.size());
-	poss.resize(widgets.size()+1);
-
-	for (sizt i=0; i!=wgts.size(); i++) {
-		wgts[i] = widgets[i];
-		wgts[i]->setParent(this, i);
-	}
-	updateValues();
+bool Layout::onClick(const vec2i& mPos, uint8 mBut) {
+	for (Widget* it : wgts)
+		if (inRect(it->rect(), mPos))
+			return it->onClick(mPos, mBut);
+	return false;
 }
 
-void Layout::updateValues() {
+void Layout::onResize() {
 	// get amount of space for widgets with prc and get sum of widget's prc
 	float space = vertical ? size().y : size().x;
 	float total = 0;
@@ -50,6 +42,29 @@ void Layout::updateValues() {
 		pos += wgts[i]->getRelSize().usePix ? wgts[i]->getRelSize().pix : wgts[i]->getRelSize().prc * space / total;
 	}
 	poss[wgts.size()] = pos;
+
+	// do the same for children
+	for (Widget* it : wgts)
+		it->onResize();
+}
+
+void Layout::setVertical(bool yes) {
+	vertical = yes;
+	onResize();
+}
+
+void Layout::setWidgets(const vector<Widget*>& widgets) {
+	for (Widget* it : wgts)	// get rid of previously existing widgets
+		delete it;
+	
+	wgts.resize(widgets.size());
+	poss.resize(widgets.size()+1);
+
+	for (sizt i=0; i!=wgts.size(); i++) {
+		wgts[i] = widgets[i];
+		wgts[i]->setParent(this, i);
+	}
+	onResize();
 }
 
 vec2i Layout::wgtPos(sizt id) const {
@@ -69,8 +84,40 @@ ScrollArea::ScrollArea(const Size& SIZ) :
 	listY(0)
 {}
 
-void ScrollArea::dragSlider(int mpos) {
-	setSlider(mpos - diffSliderMouseY);
+void ScrollArea::drawSelf(const SDL_Rect& frame) {
+	World::drawSys()->drawScrollArea(this, frame);
+}
+
+bool ScrollArea::onClick(const vec2i& mPos, uint8 mBut) {
+	return checkBarClick(mPos, mBut) || Layout::onClick(mPos, mBut);	// check slider click, then check children click
+}
+
+void ScrollArea::onDrag(const vec2i& mPos) {
+	setSlider(mPos.y - diffSliderMouseY);
+}
+
+void ScrollArea::onUndrag(uint8 mBut) {
+	if (mBut == SDL_BUTTON_LEFT)	// if dragging slider stop dragging slider
+		World::scene()->setCapture(nullptr);
+}
+
+void ScrollArea::onResize() {
+	Layout::onResize();
+	checkListY();
+}
+
+bool ScrollArea::checkBarClick(const vec2i& mPos, uint8 mBut) {
+	if (!inRect(barRect(), mPos))
+		return false;
+
+	if (mBut == SDL_BUTTON_LEFT) {
+		World::scene()->setCapture(this);
+		int sy = sliderY();
+		if (mPos.y < sy || mPos.y > sy + sliderH())	// if mouse outside of slider but inside bar
+			setSlider(mPos.y - sliderH() /2);
+		diffSliderMouseY = mPos.y - sliderY();	// get difference between mouse y and slider y
+	}
+	return true;
 }
 
 void ScrollArea::setSlider(int ypos) {
@@ -84,11 +131,6 @@ void ScrollArea::dragList(int ypos) {
 
 void ScrollArea::scrollList(int ymov) {
 	dragList(listY + ymov);
-}
-
-void ScrollArea::updateValues() {
-	Layout::updateValues();
-	checkListY();
 }
 
 int ScrollArea::barW() const {
@@ -166,10 +208,14 @@ vec2t ScrollArea::visibleItems() const {
 
 // POPUP
 
-Popup::Popup(const Size& SZX, const Size& SZY, bool VRT) :
-	Layout(SZX, VRT),
-	sizeY(SZY)
+Popup::Popup(const vec2<Size>& SIZ, bool VRT) :
+	Layout(SIZ.x, VRT),
+	sizeY(SIZ.y)
 {}
+
+void Popup::drawSelf(const SDL_Rect& frame) {
+	World::drawSys()->drawPopup(this, frame);
+}
 
 vec2i Popup::position() const {
 	return (World::winSys()->resolution() - size()) / 2;

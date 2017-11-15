@@ -11,8 +11,8 @@ public:
 	virtual void eventContextBlank() {}
 	
 	virtual Layout* createLayout() = 0;
-	Popup* createPopupMessage(const string& msg);
-	Popup* createPopupColorPick(const SDL_Color& color);
+	Popup* createPopupMessage(const string& msg, const vec2<Size>& size);
+	Popup* createPopupColorPick(SDL_Color color);
 };
 
 class ProgForms : public ProgState {

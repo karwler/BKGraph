@@ -19,6 +19,11 @@ bool strcmpCI(const string& strl, const string& strr);	// case insensitive check
 bool findChar(const string& str, char c);				// whether chacater is in string
 bool findChar(const string& str, char c, sizt& id);		// same as above except it sets id to first found character's index
 vector<string> getWords(const string& line, char splitter);
+sizt jumpToWordStart(const string& str, sizt i, char splitter=' ');	// returns index of first character of word before i
+sizt jumpToWordEnd(const string& str, sizt i, char splitter=' ');	// returns index of character after last character of word after i
+void cleanString(string& str, TextType type);
+void cleanIntString(string& str);
+void cleanFloatString(string& str);
 
 // conversions
 string wtos(const wstring& wstr);

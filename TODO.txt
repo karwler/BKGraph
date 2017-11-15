@@ -8,7 +8,6 @@ Optional:
 - highlight on mouse over
 - multiple languages
 - multiple themes
-- advanced movement in LineEdit
 - redraw only when widgets have changed
 - mingw support
 - interaction on mouse over area
@@ -16,4 +15,3 @@ Optional:
 
 Fixes:
 - test parser
-- test LineEdit
