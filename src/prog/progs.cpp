@@ -81,11 +81,11 @@ Layout* ProgForms::createLayout() {
 		CheckBox* cb = new CheckBox(frms[id].show, &Program::eventSwitchGraphShow, &Program::eventOpenContextFormula, 30);
 		ColorBox* lb = new ColorBox(frms[id].color, &Program::eventOpenGraphColorPick, &Program::eventOpenContextFormula, 30);
 		LineEdit* le = new LineEdit(frms[id].str, &Program::eventGraphFormulaChanged, &Program::eventOpenContextFormula);
-
+		
 		interacts.insert(make_pair(cb, id));
 		interacts.insert(make_pair(lb, id));
 		interacts.insert(make_pair(le, id));
-
+		
 		Layout* l = new Layout(30, false);
 		l->setWidgets({cb, new Widget(10), lb, new Widget(10), le});
 
@@ -162,7 +162,7 @@ Layout* ProgVars::createLayout() {
 // PROG GRAPH
 
 void ProgGraph::eventKeypress(const SDL_Keysym& key) {
-	// stuff else
+	gview->onKeypress(key);
 	ProgState::eventKeypress(key);
 }
 
@@ -183,10 +183,11 @@ Layout* ProgGraph::createLayout() {
 	Layout* topbar = new Layout(30, false);
 	topbar->setWidgets(wgts);
 
-	GraphView* view = new GraphView();
+	gview = new GraphView();
+	gview->setGraphs(World::program()->getFormulas());
 
 	Layout* lay = new Layout();
-	lay->setWidgets({topbar, new Widget(10), view});
+	lay->setWidgets({topbar, new Widget(10), gview});
 	return lay;
 }
 

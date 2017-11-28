@@ -203,8 +203,7 @@ vector<Formula> Filer::loadUsers(map<string, double>& vars) {
 void Filer::saveUsers(const vector<Formula>& forms, const map<string, double>& vars) {
 	vector<string> lines;
 	for (const pair<string, double>& it : vars)
-		if (it.first != "x")	// skip x place holder
-			lines.push_back(IniLine(Default::iniKeywordVariable, it.first, to_string(it.second)).line());
+		lines.push_back(IniLine(Default::iniKeywordVariable, it.first, to_string(it.second)).line());
 
 	for (const Formula& it : forms)
 		lines.push_back(IniLine(Default::iniKeywordFormula, btos(it.show) + ' ' + to_string(short(it.color.r)) + ' ' + to_string(short(it.color.g)) + ' ' + to_string(short(it.color.b)) + ' ' + to_string(short(it.color.a)) + ' ' + it.str).line());

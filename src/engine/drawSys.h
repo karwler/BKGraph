@@ -14,7 +14,7 @@ public:
 
 	void drawSlider(Slider* wgt, SDL_Rect frame);
 	void drawLabel(Label* wgt, const SDL_Rect& frame);
-	void drawGraphView(GraphView* wgt, const SDL_Rect& frame);
+	void drawGraphView(GraphView* wgt);
 	void drawLayout(Layout* box, SDL_Rect frame);
 	void drawScrollArea(ScrollArea* box, SDL_Rect frame);
 	void drawPopup(Popup* pop, const SDL_Rect& frame);

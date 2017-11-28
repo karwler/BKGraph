@@ -46,14 +46,16 @@ public:
 	void eventSettingScrollSpeed(Button* but);
 
 	// other stuff
-	ProgState* getState() { return state; }
+	ProgState* getState() { return state.get(); }
 	void setState(ProgState* newState);
 	const Formula& getFormula(sizt id) const { return forms[id]; }
 	const vector<Formula>& getFormulas() const { return forms; }
 	const map<string, double> getVariables() const { return vars; }
+	bool isValid(sizt fid);
+	double getDotY(sizt fid, double x);
 
 private:
-	sptr<ProgState> state;
+	uptr<ProgState> state;
 	Parser parser;
 	vector<Formula> forms;
 	map<string, double> vars;

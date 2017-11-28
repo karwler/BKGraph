@@ -24,7 +24,7 @@ public:
 
 	virtual void drawSelf(const SDL_Rect& frame) {}	// calls appropriate drawing function(s) in DrawSys
 	virtual bool onClick(const vec2i& mPos, uint8 mBut) { return false; }	// returns true if interaction occurs
-	virtual void onDrag(const vec2i& mPos) {}	// mouse move while left button down
+	virtual void onDrag(const vec2i& mPos, const vec2i& mMov) {}	// mouse move while left button down
 	virtual void onUndrag(uint8 mBut) {}	// get's called on mouse button up if instance is Scene's capture
 	virtual void onResize() {}	// for updating values when window size changed
 
@@ -95,7 +95,7 @@ public:
 
 	virtual void drawSelf(const SDL_Rect& frame);
 	virtual bool onClick(const vec2i& mPos, uint8 mBut);
-	virtual void onDrag(const vec2i& mPos);
+	virtual void onDrag(const vec2i& mPos, const vec2i& mMov);
 	virtual void onUndrag(uint8 mBut);
 
 	void setSlider(int xpos);
@@ -114,8 +114,6 @@ public:
 private:
 	int min, max, val;
 	int diffSliderMouseX;
-
-	void checkVal();
 };
 
 // it's a little ass backwards but labels (aka a line of text) are buttons
@@ -150,6 +148,7 @@ public:
 	virtual void setText(const string& str);
 	void setTextType(TextType type);
 	SDL_Rect caretRect() const;
+	void setCPos(int cp);
 
 	void confirm();
 	void cancel();

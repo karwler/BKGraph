@@ -96,28 +96,19 @@ wstring stow(const string& str) {
 	return std::wstring_convert<std::codecvt_utf8<wchar>, wchar>().from_bytes(str);
 }
 
-bool inRect(const SDL_Rect& rect, const vec2i& point) {
-	return rect.w != 0 && rect.h != 0 && point.x >= rect.x && point.x <= rect.x + rect.w && point.y >= rect.y && point.y <= rect.y + rect.h;
-}
-
 SDL_Rect cropRect(SDL_Rect& rect, const SDL_Rect& frame) {
 	// ends of each rect and frame
 	vec2i rend(rect.x + rect.w, rect.y + rect.h);
 	vec2i fend(frame.x + frame.w, frame.y + frame.h);
-
-	// if rect is out of frame
-	SDL_Rect crop = {0, 0, 0, 0};
-	if (rect.x > fend.x || rect.y > fend.y || rend.x < frame.x || rend.y < frame.y) {
-		crop.w = rect.w;
-		crop.h = rect.h;
+	if (rect.x > fend.x || rect.y > fend.y || rend.x < frame.x || rend.y < frame.y) {	// if rect is out of frame
 		rect = {0, 0, 0, 0};
-		return crop;
+		return rect;
 	}
 
 	// crop rect if it's boundaries are out of frame
+	SDL_Rect crop = {0, 0, 0, 0};
 	if (rect.x < frame.x) {	// left
 		crop.x = frame.x - rect.x;
-
 		rect.x = frame.x;
 		rect.w -= crop.x;
 	}
@@ -127,7 +118,6 @@ SDL_Rect cropRect(SDL_Rect& rect, const SDL_Rect& frame) {
 	}
 	if (rect.y < frame.y) {	// top
 		crop.y = frame.y - rect.y;
-
 		rect.y = frame.y;
 		rect.h -= crop.y;
 	}
@@ -142,12 +132,10 @@ SDL_Rect cropRect(SDL_Rect& rect, const SDL_Rect& frame) {
 }
 
 SDL_Rect overlapRect(const SDL_Rect& a, const SDL_Rect& b)  {
-	// ends of each rect and frame
+	// ends of both rects
 	vec2i ae(a.x + a.w, a.y + a.h);
 	vec2i be(b.x + b.w, b.y + b.h);
-
-	// if they don't overlap
-	if (a.x > be.x || a.y > be.y || ae.x < b.x || ae.y < b.y)
+	if (a.x > be.x || a.y > be.y || ae.x < b.x || ae.y < b.y)	// if they don't overlap
 		return {0, 0, 0, 0};
 
 	// crop rect if it's boundaries are out of frame
@@ -157,12 +145,27 @@ SDL_Rect overlapRect(const SDL_Rect& a, const SDL_Rect& b)  {
 		r.w -= b.x - a.x;
 	}
 	if (ae.x > be.x)	// right
-		r.w -= ae.x - be.x;
+		r.w = be.x - r.x;
 	if (a.y < b.y) {	// top
 		r.y = b.y;
 		r.h -= b.y - a.y;
 	}
 	if (ae.y > be.y)	// bottom
-		r.h -= ae.y - be.y;
+		r.h = be.y - r.y;
 	return r;
+}
+
+bool cropLine(vec2i& pos, vec2i& end, const SDL_Rect& frame) {
+	vec2i fend(frame.x + frame.w, frame.y + frame.h);
+	if (pos.x > fend.x || pos.y > fend.y || end.x < frame.x || end.y < frame.y)
+		return false;
+
+	if (pos.x < frame.x)	// left
+		pos.x = frame.x;
+	if (end.x > fend.x)		// right
+		end.x = fend.x;
+	if (pos.y < frame.y)	// top
+		pos.y = frame.y;
+	if (end.y > fend.y)		// bottom
+		end.y = fend.y;
 }

@@ -1,7 +1,7 @@
 Features:
-- make graph view
-- link program, graph view and parser into something usable
 - need an icon (in form of an ico file in the rsc directory)
+- interaction with graphs
+- add more stuff to parser
 
 Optional:
 - scale label x size to text's x size
@@ -13,5 +13,6 @@ Optional:
 - interaction on mouse over area
 - expand .gitignore
 
-Fixes:
-- test parser
+Fixes
+- optimize graph view/parser
+- test/fix parser

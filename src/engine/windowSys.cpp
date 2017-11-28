@@ -16,7 +16,7 @@ int WindowSys::start() {
 
 		sets = Filer::loadSettings();
 		createWindow();
-		scene = new Scene();
+		scene.reset(new Scene());
 	} catch (const string& str) {
 		cerr << str << endl;
 		return -1;
@@ -42,7 +42,7 @@ int WindowSys::start() {
 
 	// cleanup
 	destroyWindow();
-	scene.clear();
+	scene.reset();
 	TTF_Quit();
 	SDL_Quit();
 	return 0;
@@ -71,12 +71,12 @@ void WindowSys::createWindow() {
 	}
 
 	// set up renderer
-	drawSys = new DrawSys(window, sets.getRenderDriverIndex());
+	drawSys.reset(new DrawSys(window, sets.getRenderDriverIndex()));
 }
 
 void WindowSys::destroyWindow() {
 	if (drawSys) {	// window and drawSys come in pairs
-		drawSys.clear();
+		drawSys.reset();
 		SDL_DestroyWindow(window);
 		window = nullptr;
 	}
@@ -87,7 +87,7 @@ void WindowSys::handleEvent(const SDL_Event& event) {
 	if (event.type == SDL_KEYDOWN)
 		scene->onKeypress(event.key);
 	else if (event.type == SDL_MOUSEMOTION)
-		scene->onMouseMove(vec2i(event.motion.x, event.motion.y));
+		scene->onMouseMove(vec2i(event.motion.x, event.motion.y), vec2i(event.motion.xrel, event.motion.yrel));
 	else if (event.type == SDL_MOUSEBUTTONDOWN)
 		scene->onMouseDown(vec2i(event.button.x, event.button.y), event.button.button);
 	else if (event.type == SDL_MOUSEBUTTONUP)

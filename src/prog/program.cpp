@@ -5,12 +5,12 @@
 
 Program::Program()
 {
-	vars.insert(make_pair("x", 0.0));	// parser needs x (remember to set it before calling Parser::solve)
 	forms = Filer::loadUsers(vars);
+	parser.updateVars(vars);
 }
 
 void Program::eventClosePopup(Button* but) {
-	World::scene()->popup.clear();
+	World::scene()->popup.reset();
 }
 
 void Program::eventOpenForms(Button* but) {
@@ -40,7 +40,7 @@ void Program::eventSwitchGraphShow(Button* but) {
 
 void Program::eventOpenGraphColorPick(Button* but) {
 	static_cast<ProgForms*>(state.get())->lastClicked = but;
-	World::scene()->popup = state->createPopupColorPick(static_cast<ColorBox*>(but)->color);
+	World::scene()->popup.reset(state->createPopupColorPick(static_cast<ColorBox*>(but)->color));
 }
 
 void Program::eventGraphFormulaChanged(Button* but) {
@@ -51,7 +51,7 @@ void Program::eventGraphFormulaChanged(Button* but) {
 		forms[id].str = str;
 		ledt->setText(str);
 	} else
-		World::scene()->popup = state->createPopupMessage("Invalid Formula", vec2<Size>(300, 100));
+		World::scene()->popup.reset(state->createPopupMessage("Invalid Formula", vec2<Size>(300, 100)));
 }
 
 void Program::eventOpenContextFormula(Button* but) {
@@ -102,13 +102,17 @@ void Program::eventVarRename(Button* but) {
 	if (wordValid(ledt->getText())) {
 		vars.insert(make_pair(ledt->getText(), vars[ledt->getOldText()]));
 		vars.erase(ledt->getOldText());
+		parser.updateVars(vars);
 	} else
-		World::scene()->popup = state->createPopupMessage("Invalid Name", vec2<Size>(300, 100));
+		World::scene()->popup.reset(state->createPopupMessage("Invalid Name", vec2<Size>(300, 100)));
 }
 
 void Program::eventVarRevalue(Button* but) {
 	const string& key = static_cast<ProgVars*>(state.get())->getVarKey(but);
-	vars[key] = stod(static_cast<LineEdit*>(but)->getText());
+	double val = stod(static_cast<LineEdit*>(but)->getText());
+
+	vars[key] = val;
+	parser.updateVar(key, val);
 }
 
 void Program::eventOpenContextVariable(Button* but) {
@@ -133,12 +137,14 @@ void Program::eventAddVariable(Context::Item* item) {
 	}
 
 	vars.insert(var);
+	parser.updateAddVar(var);
 	setState(new ProgVars);
 }
 
 void Program::eventDelVariable(Context::Item* item) {
 	const string& key = static_cast<ProgVars*>(state.get())->getVarKey(World::scene()->getContext()->getWidget());
 	vars.erase(key);
+	parser.updateDelVar(key);
 
 	setState(new ProgVars);
 }
@@ -169,14 +175,22 @@ void Program::eventSettingScrollSpeed(Button* but) {
 }
 
 void Program::setState(ProgState* newState) {
-	state = newState;
+	state.reset(newState);
 	World::scene()->clearScene();
-	World::scene()->layout = state->createLayout();
+	World::scene()->layout.reset(state->createLayout());
+}
+
+bool Program::isValid(sizt fid) {
+	return parser.check(forms[fid].str);
+}
+
+double Program::getDotY(sizt fid, double x) {
+	return parser.solve(forms[fid].str, x);
 }
 
 bool Program::wordValid(const string& str) {
 	for (char c : str)
 		if (c < 'A' || c > 'z' || (c > 'Z' && c < 'a' && c != '_'))	// only letters and underscode allowed
 			return false;
-	return !str.empty() && Default::parserConsts.count(str) == 0 && vars.count(str) == 0 && Default::parserFuncs.count(str) == 0;	// no empty or already existing words
+	return !str.empty() && !parser.isVar(str) && Default::parserFuncs.count(str) == 0;	// no empty or already existing words
 }

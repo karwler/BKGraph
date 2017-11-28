@@ -50,6 +50,9 @@ public:
 	virtual void eventBack();
 	
 	virtual Layout* createLayout();
+
+private:
+	GraphView* gview;
 };
 
 class ProgSettings : public ProgState {

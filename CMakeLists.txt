@@ -23,7 +23,6 @@ set(SRC_FILES
 	"src/utils/parser.h"
 	"src/utils/settings.cpp"
 	"src/utils/settings.h"
-	"src/utils/sptr.h"
 	"src/utils/utils.cpp"
 	"src/utils/utils.h"
 	"src/utils/vec2.h"

@@ -17,8 +17,8 @@ public:
 	static string getRendererName(int id);
 	static vector<string> getAvailibleRenderers();
 
-	DrawSys* getDrawSys() { return drawSys; }
-	Scene* getScene() { return scene; }
+	DrawSys* getDrawSys() { return drawSys.get(); }
+	Scene* getScene() { return scene.get(); }
 
 	const Settings& getSettings() const { return sets; }
 	FontSet& getFontSet() { return sets.fontSet; }
@@ -28,8 +28,8 @@ public:
 	void setScrollSpeed(int ss) { sets.scrollSpeed = ss; }
 
 private:
-	sptr<Scene> scene;
-	sptr<DrawSys> drawSys;
+	uptr<Scene> scene;
+	uptr<DrawSys> drawSys;
 	SDL_Window* window;
 
 	Settings sets;

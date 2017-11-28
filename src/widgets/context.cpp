@@ -18,7 +18,7 @@ Context::Context(Widget* WGT, const vector<Item>& ITMS, const vec2i& POS, const 
 }
 
 void Context::onClick(const vec2i& mPos, uint8 mBut) {
-	if (inRect(rect(), mPos) && mBut == SDL_BUTTON_LEFT) {	// handle only left click inside context's box
+	if (inRect(mPos, rect()) && mBut == SDL_BUTTON_LEFT) {	// handle only left click inside context's box
 		Context::Item& itm = items[(mPos.y - position.y) / Default::itemHeight];	// get the item that was clicked
 		(World::program()->*itm.call)(&itm);
 	}

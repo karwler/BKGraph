@@ -36,7 +36,7 @@ public:
 
 	virtual void drawSelf(const SDL_Rect& frame);
 	virtual bool onClick(const vec2i& mPos, uint8 mBut);
-	virtual void onDrag(const vec2i& mPos);
+	virtual void onDrag(const vec2i& mPos, const vec2i& mMov);
 	virtual void onUndrag(uint8 mBut);
 	virtual void onResize();
 
@@ -61,7 +61,6 @@ private:
 	int listY;		// position of the list
 
 	bool checkBarClick(const vec2i& mPos, uint8 mBut);
-	void checkListY();	// check if listY is out of limits and correct if so
 };
 
 // layout with background that is placed in the center of the screen

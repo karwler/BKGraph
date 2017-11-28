@@ -10,7 +10,7 @@ public:
 	Scene();
 	
 	void onKeypress(const SDL_KeyboardEvent& key);
-	void onMouseMove(const vec2i& mPos);
+	void onMouseMove(const vec2i& mPos, const vec2i& mMov);
 	void onMouseDown(const vec2i& mPos, uint8 mBut);
 	void onMouseUp(uint8 mBut);
 	void onMouseWheel(int wMov);
@@ -22,14 +22,14 @@ public:
 	Widget* getCapture() { return capture; }
 	void setCapture(Widget* cbox);
 
-	Context* getContext() { return context; }
+	Context* getContext() { return context.get(); }
 	void setContext(Context* newContext);	// also sets context's position
 
-	sptr<Layout> layout;
-	sptr<Popup> popup;
+	uptr<Layout> layout;
+	uptr<Popup> popup;
 private:
 	Program program;
-	sptr<Context> context;
+	uptr<Context> context;
 
 	Widget* capture;	// either pointer to LineEdit currently hogging all keyboard input or ScrollArea whichs slider or Slider which is currently being dragged. nullptr if nothing is being ca[tired or dragged
 	

@@ -11,9 +11,9 @@ void Scene::onKeypress(const SDL_KeyboardEvent& key) {
 		program.getState()->eventKeypress(key.keysym);
 }
 
-void Scene::onMouseMove(const vec2i& mPos) {
+void Scene::onMouseMove(const vec2i& mPos, const vec2i& mMov) {
 	if (capture)
-		capture->onDrag(mPos);
+		capture->onDrag(mPos, mMov);
 }
 
 void Scene::onMouseDown(const vec2i& mPos, uint8 mBut) {
@@ -33,12 +33,12 @@ void Scene::onMouseUp(uint8 mBut) {
 }
 
 void Scene::onMouseWheel(int wMov) {
-	if (ScrollArea* box = checkMouseOverScrollArea(World::winSys()->mousePos(), popup.get() ? static_cast<Layout*>(popup) : layout))	// if mouse is over a ScrollArea scroll it
+	if (ScrollArea* box = checkMouseOverScrollArea(World::winSys()->mousePos(), popup.get() ? static_cast<Layout*>(popup.get()) : layout.get()))	// if mouse is over a ScrollArea scroll it
 		box->scrollList(wMov*Default::scrollFactorWheel);
 }
 
 ScrollArea* Scene::checkMouseOverScrollArea(const vec2i& mPos, Layout* box) {
-	if (!inRect(box->rect(), mPos))	// mouse not over box
+	if (!inRect(mPos, box->rect()))	// mouse not over box
 		return nullptr;
 	if (ScrollArea* sca = dynamic_cast<ScrollArea*>(box))	// box might be a scroll area
 		return sca;
@@ -56,9 +56,9 @@ void Scene::onText(const string& text) {
 
 void Scene::clearScene() {
 	setCapture(nullptr);
-	popup.clear();
-	context.clear();
-	layout.clear();
+	popup.reset();
+	context.reset();
+	layout.reset();
 	World::winSys()->getFontSet().clear();
 }
 
@@ -77,7 +77,7 @@ void Scene::setCapture(Widget* cbox) {
 }
 
 void Scene::setContext(Context* newContext) {
-	context = newContext;
+	context.reset(newContext);
 	if (context) {	// if new context correct it's position if it's out of frame
 		vec2i res = World::winSys()->resolution();
 		correctContextPos(context->position.x, context->getSize().x, res.x);

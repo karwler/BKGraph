@@ -19,7 +19,7 @@ void Layout::drawSelf(const SDL_Rect& frame) {
 
 bool Layout::onClick(const vec2i& mPos, uint8 mBut) {
 	for (Widget* it : wgts)
-		if (inRect(it->rect(), mPos))
+		if (inRect(mPos, it->rect()))
 			return it->onClick(mPos, mBut);
 	return false;
 }
@@ -92,7 +92,7 @@ bool ScrollArea::onClick(const vec2i& mPos, uint8 mBut) {
 	return checkBarClick(mPos, mBut) || Layout::onClick(mPos, mBut);	// check slider click, then check children click
 }
 
-void ScrollArea::onDrag(const vec2i& mPos) {
+void ScrollArea::onDrag(const vec2i& mPos, const vec2i& mMov) {
 	setSlider(mPos.y - diffSliderMouseY);
 }
 
@@ -103,11 +103,11 @@ void ScrollArea::onUndrag(uint8 mBut) {
 
 void ScrollArea::onResize() {
 	Layout::onResize();
-	checkListY();
+	bringIn(listY, 0, listL());
 }
 
 bool ScrollArea::checkBarClick(const vec2i& mPos, uint8 mBut) {
-	if (!inRect(barRect(), mPos))
+	if (!inRect(mPos, barRect()))
 		return false;
 
 	if (mBut == SDL_BUTTON_LEFT) {
@@ -126,7 +126,7 @@ void ScrollArea::setSlider(int ypos) {
 
 void ScrollArea::dragList(int ypos) {
 	listY = ypos;
-	checkListY();
+	bringIn(listY, 0, listL());
 }
 
 void ScrollArea::scrollList(int ymov) {
@@ -154,14 +154,6 @@ int ScrollArea::sliderH() const {
 
 int ScrollArea::sliderL() const {
 	return size().y - sliderH();
-}
-
-void ScrollArea::checkListY() {
-	int lsl = listL();
-	if (listY < 0)
-		listY = 0;
-	else if (listY > lsl)
-		listY = lsl;
 }
 
 vec2i ScrollArea::wgtPos(sizt id) const {

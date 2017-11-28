@@ -4,7 +4,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
-#include "utils/sptr.h"
 #include "utils/vec2.h"
 
 #include <cmath>
@@ -13,7 +12,8 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <tuple>
+#include <unordered_map>
+#include <memory>
 
 // to make life easier
 using std::cout;
@@ -26,10 +26,12 @@ using std::vector;
 using std::map;
 using std::pair;
 using std::make_pair;
-using std::tuple;
-using std::make_tuple;
 
-// aliases
+template <typename... T>
+using umap = std::unordered_map<T...>;
+template <typename... T>
+using uptr = std::unique_ptr<T...>;
+
 using uchar = unsigned char;
 using ushort = unsigned short;
 using uint = unsigned int;
@@ -125,9 +127,11 @@ const char iniKeywordFormula[] = "formula";
 
 // parser stuff
 const map<string, double> parserConsts = {
-	pair<string, double>("pi", M_PI)
+	pair<string, double>("x", 0.0),
+	pair<string, double>("pi", 3.1415926535897932),
+	pair<string, double>("e", 2.7182818284590452)
 };
-const map<string, mfptr> parserFuncs = {
+const umap<string, mfptr> parserFuncs = {
 	pair<string, mfptr>("abs", std::abs),
 	pair<string, mfptr>("sqrt", std::sqrt),
 	pair<string, mfptr>("log", std::log),
@@ -146,6 +150,9 @@ const map<string, mfptr> parserFuncs = {
 const int itemHeight = 30;
 const int sliderWidth = 10;
 const int caretWidth = 4;
+const double gvMoveFactor = 0.25;
+const double gvMouseZoomFactor = 0.01;
+const double gvKeyZoomFactor = 2.0;
 
 // other random crap
 const int fontTestHeight = 100;

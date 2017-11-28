@@ -1,4 +1,10 @@
-#include "engine/world.h"
+#include "parser.h"
+
+void Parser::updateVars(const map<string, double>& pvars) {
+	vars.clear();
+	vars.insert(Default::parserConsts.begin(), Default::parserConsts.end());
+	vars.insert(vars.begin(), vars.end());
+}
 
 bool Parser::isDigit() {
 	return getc() >= '0' && getc() <= '9';
@@ -9,7 +15,7 @@ bool Parser::isOperator() {
 }
 
 template <typename T>
-bool Parser::isWord(const map<string, T>& words) {
+bool Parser::isWord(const umap<string, T>& words) {
 	for (const pair<string, T>& it : words)
 		if (getc() == it.first[0])
 			return true;
@@ -17,32 +23,28 @@ bool Parser::isWord(const map<string, T>& words) {
 }
 
 bool Parser::cmpWord(const string& word) {
-	uint i = 0;
-	do {
-		if (str->at(id+i) != word[i])
+	for (sizt i=0; i!=word.length(); i++)
+		if (getc(i) != word[i])
 			return false;
-	} while (word[i++] != '\0');
 	return true;
 }
 
 // CHECKER
 
-bool Parser::check(string& formula) {
+bool Parser::check(string formula) {
 	// remove whitespaces
-	for (sizt i=0; i!=formula.size(); i++)
-		if (formula[i] == ' ') {
-			formula.erase(i);
-			i--;
-		}
+	for (id=0; id!=formula.length(); id++)
+		if (formula[id] == ' ')
+			formula.erase(id--);
 
 	// reset values
-	str = &formula;
+	form = &formula;
 	id = 0;
 	pcnt = 0;
 
 	// do the checking
 	try {
-		readFirst();
+		checkFirst();
 		if (pcnt != 0)
 			throw id;
 	} catch (sizt e) {
@@ -55,7 +57,7 @@ bool Parser::check(string& formula) {
 void Parser::checkFirst() {
 	if (isDigit())
 		checkNumber();
-	else if (isWord(Default::parserConsts) || isWord(World::program()->getVariables()))
+	else if (isWord(vars))
 		checkVar();
 	else if (isWord(Default::parserFuncs))
 		checkFunc();
@@ -75,7 +77,7 @@ void Parser::checkNumber() {
 	if (getc() == '.') {
 		id++;
 		if (!isDigit())
-			throw 1;
+			throw id;
 
 		while (isDigit())
 			id++;
@@ -91,9 +93,8 @@ void Parser::checkNumber() {
 
 void Parser::checkVar() {
 	id++;
-	if (!checkWord(Default::parserConsts))
-		checkWord(World::program()->getVariables());
-
+	checkWord(vars);
+	
 	if (isOperator())
 		checkOperator();
 	else if (getc() == ')')
@@ -113,7 +114,7 @@ void Parser::checkFunc() {
 }
 
 template<typename T>
-bool Parser::checkWord(const map<string, T>& words) {
+bool Parser::checkWord(const umap<string, T>& words) {
 	for (const pair<string, T>& it : words)
 		if (cmpWord(it.first)) {
 			id += it.first.length();
@@ -128,7 +129,7 @@ void Parser::checkOperator() {
 		checkNumber();
 	else if (getc() == '(')
 		checkParOpen();
-	else if (isWord(Default::parserConsts) || isWord(World::program()->getVariables()))
+	else if (isWord(vars))
 		checkVar();
 	else if (isWord(Default::parserFuncs))
 		checkFunc();
@@ -157,9 +158,10 @@ void Parser::checkParClose() {
 
 // SOLVER
 
-double Parser::solve(string& formula) {
+double Parser::solve(string& formula, double x) {
 	// reset values
-	str = &formula;
+	form = &formula;
+	vars["x"] = x;
 	id = 0;
 
 	// do the solving
@@ -216,7 +218,7 @@ double Parser::readFirst() {
 		double result = readAddSub();
 		id++; // ')'
 		return result;
-	} else if (isWord(Default::parserConsts) || isWord(World::program()->getVariables()))
+	} else if (isWord(vars))
 		return readVar();
 	else if (isWord(Default::parserFuncs))
 		return readFunc();
@@ -249,12 +251,7 @@ double Parser::readNumber() {
 }
 
 double Parser::readVar() {
-	for (const pair<string, double>& it : Default::parserConsts)
-		if (cmpWord(it.first)) {
-			id += it.first.length();
-			return it.second;
-		}
-	for (const pair<string, double>& it : World::program()->getVariables())
+	for (const pair<string, double>& it : vars)
 		if (cmpWord(it.first)) {
 			id += it.first.length();
 			return it.second;

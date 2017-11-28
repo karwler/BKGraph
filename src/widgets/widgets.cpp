@@ -151,7 +151,7 @@ bool Slider::onClick(const vec2i& mPos, uint8 mBut) {
 	return true;
 }
 
-void Slider::onDrag(const vec2i& mPos) {
+void Slider::onDrag(const vec2i& mPos, const vec2i& mMov) {
 	setSlider(mPos.x - diffSliderMouseX);
 }
 
@@ -162,7 +162,7 @@ void Slider::onUndrag(uint8 mBut) {
 
 void Slider::setSlider(int xpos) {
 	val = (xpos - position().x) * max / sliderL();
-	checkVal();
+	bringIn(val, min, max);
 
 	if (lcall)
 		(World::program()->*lcall)(this);
@@ -170,17 +170,17 @@ void Slider::setSlider(int xpos) {
 
 void Slider::setMin(int MIN) {
 	min = MIN;
-	checkVal();
+	bringIn(val, min, max);
 }
 
 void Slider::setMax(int MAX) {
 	max = MAX;
-	checkVal();
+	bringIn(val, min, max);
 }
 
 void Slider::setVal(int VAL) {
 	val = VAL;
-	checkVal();
+	bringIn(val, min, max);
 }
 
 int Slider::sliderX() const {
@@ -201,13 +201,6 @@ SDL_Rect Slider::sliderRect() const {
 	vec2i pos = position();
 	vec2i siz = size();
 	return {sliderX(), pos.y, Default::sliderWidth, siz.y};
-}
-
-void Slider::checkVal() {
-	if (val < min)
-		val = min;
-	else if (val > max)
-		val = max;
 }
 
 // LABEL
@@ -235,15 +228,17 @@ vec2i Label::textPos() const {
 
 LineEdit::LineEdit(const string& TXT, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ, TextType TYP) :
 	Label(TXT, LCL, RCL, SIZ, Alignment::left),
-	textType(TYP)
+	textType(TYP),
+	textOfs(0),
+	cpos(0)
 {
-	setText(TXT);	// sets cpos and textOfs
+	cleanString(text, textType);
 }
 
 bool LineEdit::onClick(const vec2i& mPos, uint8 mBut) {
 	if (mBut == SDL_BUTTON_LEFT) {
 		World::scene()->setCapture(this);
-		cpos = text.length();
+		setCPos(text.length());
 	} else if (mBut == SDL_BUTTON_RIGHT && rcall)
 		(World::program()->*rcall)(this);
 	return true;
@@ -251,34 +246,58 @@ bool LineEdit::onClick(const vec2i& mPos, uint8 mBut) {
 
 void LineEdit::onKeypress(const SDL_Keysym& key) {
 	if (key.scancode == SDL_SCANCODE_LEFT) {	// move caret left
-		if (key.mod & KMOD_LALT)	// if holding alt skip word, otherwise move by one
-			cpos = jumpToWordStart(text, cpos);
-		else if (key.mod & KMOD_CTRL)
-			cpos = 0;
-		else if (cpos != 0)
-			cpos--;
-		checkTextOffset();
+		if (key.mod & KMOD_LALT)	// if holding alt skip word
+			setCPos(jumpToWordStart(text, cpos));
+		else if (key.mod & KMOD_CTRL)	// if holding ctrl move to beginning
+			setCPos(0);
+		else if (cpos != 0)	// otherwise go left by one
+			setCPos(cpos - 1);
 	} else if (key.scancode == SDL_SCANCODE_RIGHT) {	// move caret right
-		if (key.mod & KMOD_LALT)	// if holding alt skip word, otherwise move by one
-			cpos = jumpToWordEnd(text, cpos);
-		else if (key.mod & KMOD_CTRL)
-			cpos = text.length();
-		else if (cpos != text.length())
-			cpos++;
-		checkTextOffset();
+		if (key.mod & KMOD_LALT)	// if holding alt skip word
+			setCPos(jumpToWordEnd(text, cpos));
+		else if (key.mod & KMOD_CTRL)	// if holding ctrl go to end
+			setCPos(text.length());
+		else if (cpos != text.length())	// otherwise go right by one
+			setCPos(cpos + 1);
 	} else if (key.scancode == SDL_SCANCODE_BACKSPACE) {	// delete left
-		if (key.mod & KMOD_LALT) {	// if holding alt delete word, otherwise delete character
+		if (key.mod & KMOD_LALT) {	// if holding alt delete left word
 			sizt id = jumpToWordStart(text, cpos);
 			text.erase(id, cpos - id);
-			cpos = id;
-		} else if (cpos != 0) {
-			cpos--;
-			text.erase(cpos, 1);
+			setCPos(id);
+		} else if (key.mod & KMOD_CTRL) {	// if holding ctrl delete line to left
+			text.erase(0, id);
+			setCPos(0);
+		} else if (cpos != 0) {	// otherwise delete left character
+			text.erase(cpos - 1);
+			setCPos(cpos - 1);
 		}
-		checkTextOffset();
-	} else if (key.scancode == SDL_SCANCODE_DELETE) {	// delete right
-		if (cpos != text.length())
+	} else if (key.scancode == SDL_SCANCODE_DELETE) {	// delete right character
+		if (key.mod & KMOD_LALT)	// if holding alt delete right word
+			text.erase(cpos, jumpToWordEnd(text, cpos) - cpos);
+		else if (key.mod & KMOD_CTRL)	// if holding ctrl delete line to right
+			text.erase(cpos, text.length() - cpos);
+		else if (cpos != text.length())	// otherwise delete right character
 			text.erase(cpos, 1);
+	} else if (key.scancode == SDL_SCANCODE_HOME)	// move caret to beginning
+		setCPos(0);
+	else if (key.scancode == SDL_SCANCODE_END)	// move caret to end
+		setCPos(text.length());
+	else if (key.scancode == SDL_SCANCODE_V) {	// paste text
+		if (key.mod & KMOD_CTRL)
+			onText(SDL_GetClipboardText());
+	} else if (key.scancode == SDL_SCANCODE_C) {	// copy text
+		if (key.mod & KMOD_CTRL)
+			SDL_SetClipboardText(text.c_str());
+	} else if (key.scancode == SDL_SCANCODE_X) {	// cut text
+		if (key.mod & KMOD_CTRL) {
+			SDL_SetClipboardText(text.c_str());
+			setText("");
+		}
+	} else if (key.scancode == SDL_SCANCODE_Z || key.scancode == SDL_SCANCODE_Y) {	// set text to old text
+		if (key.mod & KMOD_CTRL) {
+			string newOldCopy = oldText;
+			setText(newOldCopy);
+		}
 	} else if (key.scancode == SDL_SCANCODE_RETURN)
 		confirm();
 	else if (key.scancode == SDL_SCANCODE_ESCAPE)
@@ -288,9 +307,7 @@ void LineEdit::onKeypress(const SDL_Keysym& key) {
 void LineEdit::onText(string str) {
 	cleanString(str, textType);
 	text.insert(cpos, str);
-
-	cpos += str.length();
-	checkTextOffset();
+	setCPos(cpos + str.length());
 }
 
 vec2i LineEdit::textPos() const {
@@ -302,20 +319,24 @@ void LineEdit::setText(const string& str) {
 	oldText = text;
 	text = str;
 	cleanString(text, textType);
-	cpos = 0;
-	textOfs = 0;
+	setCPos(text.length());
 }
 
 void LineEdit::setTextType(TextType type) {
 	textType = type;
 	cleanString(text, textType);
 	if (cpos > text.length())
-		cpos = text.length();
+		setCPos(text.length());
 }
 
 SDL_Rect LineEdit::caretRect() const {
 	vec2i ps = position();
 	return {caretPos() + ps.x + Default::textOffset, ps.y, Default::caretWidth, size().y};
+}
+
+void LineEdit::setCPos(int cp) {
+	cpos = cp;
+	checkTextOffset();
 }
 
 int LineEdit::caretPos() const {
