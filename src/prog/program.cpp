@@ -193,7 +193,7 @@ double Program::getDotY(sizt fid, double x) {
 
 bool Program::wordValid(const string& str) {
 	for (char c : str)
-		if (c < 'A' || c > 'z' || (c > 'Z' && c < 'a' && c != '_'))	// only letters and underscode allowed
+		if (!isLetter(c))
 			return false;
 	return !str.empty() && !parser.isVar(str) && Default::parserFuncs.count(str) == 0;	// no empty or already existing words
 }

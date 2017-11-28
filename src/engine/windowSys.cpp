@@ -11,9 +11,11 @@ int WindowSys::start() {
 	try {
 		if (SDL_Init(SDL_INIT_VIDEO))
 			throw "couldn't initialize SDL\n" + string(SDL_GetError());
+		if (!IMG_Init(IMG_INIT_PNG))
+			throw "couldn't initialize PNGs\n" + string(IMG_GetError());
 		if (TTF_Init())
 			throw "couldn't initialize fonts\n" + string(SDL_GetError());
-
+		
 		sets = Filer::loadSettings();
 		createWindow();
 		scene.reset(new Scene());
@@ -49,6 +51,7 @@ int WindowSys::start() {
 	scene.reset();
 	destroyWindow();
 	TTF_Quit();
+	IMG_Quit();
 	SDL_Quit();
 	return 0;
 }
@@ -57,7 +60,7 @@ void WindowSys::createWindow() {
 	destroyWindow();	// make sure old window (if exists) is destroyed
 
 	// create new window
-	uint32 flags = Default::windowFlags;
+	uint32 flags = SDL_WINDOW_RESIZABLE;
 	if (sets.maximized)
 		flags |= SDL_WINDOW_MAXIMIZED;
 	if (sets.fullscreen)
@@ -67,9 +70,9 @@ void WindowSys::createWindow() {
 	if (!window)
 		throw "couldn't create window\n" + string(SDL_GetError());
 	SDL_SetWindowMinimumSize(window, Default::windowMinSize.x, Default::windowMinSize.y);
-
+	
 	// set icon
-	SDL_Surface* icon = SDL_LoadBMP(string(Filer::dirExec + Default::fileIcon).c_str());
+	SDL_Surface* icon = IMG_Load(string(Filer::dirExec + Default::fileIcon).c_str());
 	if (icon) {
 		SDL_SetWindowIcon(window, icon);
 		SDL_FreeSurface(icon);

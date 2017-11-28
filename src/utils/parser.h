@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils/defaults.h"
+#include "utils/utils.h"
 
 // for checking the syntax of formulas and solving them
 class Parser {
@@ -22,11 +22,6 @@ private:
 
 	char getc() { return (*form)[id]; }
 	char geti(sizt i) { return (*form)[i]; }
-
-	bool isDigit();
-	bool isOperator();
-	bool isLetter(sizt i);
-	bool isLetter() { return isLetter(id); }
 	sizt findWordEnd();
 
 	void checkFirst();

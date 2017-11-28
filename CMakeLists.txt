@@ -59,7 +59,9 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	link_directories(${LIB_DIR})
 	set(DLL_FILES
 		"libfreetype-6.dll"
+		"libpng16-16.dll"
 		"SDL2.dll"
+		"SDL2_image.dll"
 		"SDL2_ttf.dll"
 		"zlib1.dll")
 endif()
@@ -74,7 +76,7 @@ add_executable(BKGraph ${SRC_FILES})
 target_compile_features(BKGraph PUBLIC cxx_nullptr cxx_enum_forward_declarations cxx_variadic_templates cxx_alias_templates cxx_unicode_literals cxx_long_long_type cxx_rvalue_references)
 
 # linker flags
-target_link_libraries(BKGraph SDL2 SDL2_ttf)
+target_link_libraries(BKGraph SDL2 SDL2_image SDL2_ttf)
 
 # target path
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
@@ -103,7 +105,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	endforeach()
 endif()
 add_custom_command(TARGET BKGraph POST_BUILD
-					COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/rsc/BKGraph.ico ${EXECUTABLE_OUTPUT_PATH})
+					COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/rsc/icon.png ${EXECUTABLE_OUTPUT_PATH})
 					
 # filter file for ms visual studio
 foreach(source IN LISTS SRC_FILES)

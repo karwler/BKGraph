@@ -15,6 +15,9 @@ enum class TextType : uint8 {
 };
 
 // string stuff
+inline bool isDigit(char c) { return c >= '0' && c <= '9'; }
+inline bool isLetter(char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'; }
+inline bool isOperator(char c) { return c == '+' || c == '-' || c == '*' || c == '/' || c == '^'; }
 bool strcmpCI(const string& strl, const string& strr);	// case insensitive check if strings are equal
 bool findChar(const string& str, char c);				// whether chacater is in string
 bool findChar(const string& str, char c, sizt& id);		// same as above except it sets id to first found character's index

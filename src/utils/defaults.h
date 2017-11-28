@@ -2,6 +2,7 @@
 
 // stuff that'll be used pretty much everywhere
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 
 #include "utils/vec2.h"
@@ -93,7 +94,6 @@ const int scrollSpeed = 8;
 const char windowTitle[] = "BKGraph";
 const vec2i windowPos(SDL_WINDOWPOS_UNDEFINED);
 const vec2i windowMinSize(500, 300);
-const uint32 windowFlags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN;
 const uint32 rendererFlags = SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED;
 
 // key bindings
@@ -111,7 +111,7 @@ const SDL_Color colorPopupDim = {2, 2, 2, 1};
 const SDL_Color colorNoDim = {1, 1, 1, 1};
 
 // files and directories
-const char fileIcon[] = "BKGraph.ico";
+const char fileIcon[] = "icon.png";
 const char fileSettings[] = "settings.ini";
 const char fileUsers[] = "users.ini";
 

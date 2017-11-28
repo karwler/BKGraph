@@ -6,21 +6,9 @@ void Parser::updateVars(const map<string, double>& pvars) {
 	vars.insert(vars.begin(), vars.end());
 }
 
-bool Parser::isDigit() {
-	return getc() >= '0' && getc() <= '9';
-}
-
-bool Parser::isOperator() {
-	return getc() == '+' || getc() == '-' || getc() == '*' || getc() == '/' || getc() == '^';
-}
-
-bool Parser::isLetter(sizt i) {
-	return (geti(i) >= 'A' && geti(i) <= 'Z') || (geti(i) >= 'a' && geti(i) <= 'z');
-}
-
 sizt Parser::findWordEnd() {
 	sizt i = id;
-	while (isLetter(i))
+	while (isLetter(geti(i)))
 		i++;
 	return i;
 }
@@ -51,9 +39,9 @@ bool Parser::check(string formula) {
 }
 
 void Parser::checkFirst() {
-	if (isDigit())
+	if (isDigit(getc()))
 		checkNumber();
-	else if (isLetter())
+	else if (isLetter(getc()))
 		checkWord();
 	else if (getc() == '-')
 		checkOperator();
@@ -65,19 +53,19 @@ void Parser::checkFirst() {
 
 void Parser::checkNumber() {
 	id++;
-	while (isDigit())
+	while (isDigit(getc()))
 		id++;
 
 	if (getc() == '.') {
 		id++;
-		if (!isDigit())
+		if (!isDigit(getc()))
 			throw id;
 
-		while (isDigit())
+		while (isDigit(getc()))
 			id++;
 	}
 
-	if (isOperator())
+	if (isOperator(getc()))
 		checkOperator();
 	else if (getc() == ')')
 		checkParClose();
@@ -99,7 +87,7 @@ void Parser::checkWord() {
 }
 
 void Parser::checkVar() {
-	if (isOperator())
+	if (isOperator(getc()))
 		checkOperator();
 	else if (getc() == ')')
 		checkParClose();
@@ -116,11 +104,11 @@ void Parser::checkFunc() {
 
 void Parser::checkOperator() {
 	id++;
-	if (isDigit())
+	if (isDigit(getc()))
 		checkNumber();
 	else if (getc() == '(')
 		checkParOpen();
-	else if (isLetter())
+	else if (isLetter(getc()))
 		checkWord();
 	else
 		throw id;
@@ -137,7 +125,7 @@ void Parser::checkParClose() {
 	id++;
 	pcnt--;
 
-	if (isOperator())
+	if (isOperator(getc()))
 		checkOperator();
 	else if (getc() == ')')
 		checkParClose();
@@ -200,14 +188,14 @@ double Parser::readPower() {
 }
 
 double Parser::readFirst() {
-	if (isDigit())
+	if (isDigit(getc()))
 		return readNumber();
 	else if (getc() == '(') {
 		id++; // '('
 		double result = readAddSub();
 		id++; // ')'
 		return result;
-	} else if (isLetter())
+	} else if (isLetter(getc()))
 		return readWord();
 	else if (getc() == '-') {
 		id++;
@@ -219,7 +207,7 @@ double Parser::readFirst() {
 double Parser::readNumber() {
 	double res = getc() - '0';
 	id++;
-	while (isDigit()) {
+	while (isDigit(getc())) {
 		res = res*10.0 + double(getc() - '0');
 		id++;
 	}
@@ -227,7 +215,7 @@ double Parser::readNumber() {
 	if (getc() == '.') {
 		id++;
 		double fact = 1.0;
-		while (isDigit()) {
+		while (isDigit(getc())) {
 			res = res*10.0 + double(getc() - '0');
 			fact /= 10.0;
 			id++;
@@ -242,7 +230,7 @@ double Parser::readWord() {
 	string word = form->substr(id, end-id);
 	id = end;
 
-	if (vars.count(word) != 0)
+	if (vars.count(word))
 		return vars[word];
 	return Default::parserFuncs.at(word)(readFirst());
 }
