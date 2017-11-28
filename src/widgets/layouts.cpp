@@ -113,7 +113,7 @@ bool ScrollArea::checkBarClick(const vec2i& mPos, uint8 mBut) {
 	if (mBut == SDL_BUTTON_LEFT) {
 		World::scene()->setCapture(this);
 		int sy = sliderY();
-		if (mPos.y < sy || mPos.y > sy + sliderH())	// if mouse outside of slider but inside bar
+		if (outRange(mPos.y, sy, sy + sliderH()))	// if mouse outside of slider but inside bar
 			setSlider(mPos.y - sliderH() /2);
 		diffSliderMouseY = mPos.y - sliderY();	// get difference between mouse y and slider y
 	}

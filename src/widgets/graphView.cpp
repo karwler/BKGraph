@@ -15,7 +15,7 @@ GraphView::GraphView(const Size& SIZ, const vec2d& VST, const vec2d& VSZ) :
 {}
 
 void GraphView::drawSelf(const SDL_Rect& frame) {
-	World::drawSys()->drawGraphView(this);
+	World::drawSys()->drawGraphView(this, frame);
 }
 
 bool GraphView::onClick(const vec2i& mPos, uint8 mBut) {

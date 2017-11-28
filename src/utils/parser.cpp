@@ -14,19 +14,15 @@ bool Parser::isOperator() {
 	return getc() == '+' || getc() == '-' || getc() == '*' || getc() == '/' || getc() == '^';
 }
 
-template <typename T>
-bool Parser::isWord(const umap<string, T>& words) {
-	for (const pair<string, T>& it : words)
-		if (getc() == it.first[0])
-			return true;
-	return false;
+bool Parser::isLetter(sizt i) {
+	return (geti(i) >= 'A' && geti(i) <= 'Z') || (geti(i) >= 'a' && geti(i) <= 'z');
 }
 
-bool Parser::cmpWord(const string& word) {
-	for (sizt i=0; i!=word.length(); i++)
-		if (getc(i) != word[i])
-			return false;
-	return true;
+sizt Parser::findWordEnd() {
+	sizt i = id;
+	while (isLetter(i))
+		i++;
+	return i;
 }
 
 // CHECKER
@@ -57,10 +53,8 @@ bool Parser::check(string formula) {
 void Parser::checkFirst() {
 	if (isDigit())
 		checkNumber();
-	else if (isWord(vars))
-		checkVar();
-	else if (isWord(Default::parserFuncs))
-		checkFunc();
+	else if (isLetter())
+		checkWord();
 	else if (getc() == '-')
 		checkOperator();
 	else if (getc() == '(')
@@ -91,10 +85,20 @@ void Parser::checkNumber() {
 		throw id;
 }
 
+void Parser::checkWord() {
+	sizt end = findWordEnd();
+	string word = form->substr(id, end-id);
+	id = end;
+
+	if (vars.count(word) != 0)
+		checkVar();
+	else if (Default::parserFuncs.count(word) != 0)
+		checkFunc();
+	else
+		throw id;
+}
+
 void Parser::checkVar() {
-	id++;
-	checkWord(vars);
-	
 	if (isOperator())
 		checkOperator();
 	else if (getc() == ')')
@@ -104,23 +108,10 @@ void Parser::checkVar() {
 }
 
 void Parser::checkFunc() {
-	id++;
-	checkWord(Default::parserFuncs);
-
 	if (getc() == '(')
 		checkParOpen();
 	else
 		throw id;
-}
-
-template<typename T>
-bool Parser::checkWord(const umap<string, T>& words) {
-	for (const pair<string, T>& it : words)
-		if (cmpWord(it.first)) {
-			id += it.first.length();
-			return true;
-		}
-	return false;
 }
 
 void Parser::checkOperator() {
@@ -129,10 +120,8 @@ void Parser::checkOperator() {
 		checkNumber();
 	else if (getc() == '(')
 		checkParOpen();
-	else if (isWord(vars))
-		checkVar();
-	else if (isWord(Default::parserFuncs))
-		checkFunc();
+	else if (isLetter())
+		checkWord();
 	else
 		throw id;
 }
@@ -218,10 +207,8 @@ double Parser::readFirst() {
 		double result = readAddSub();
 		id++; // ')'
 		return result;
-	} else if (isWord(vars))
-		return readVar();
-	else if (isWord(Default::parserFuncs))
-		return readFunc();
+	} else if (isLetter())
+		return readWord();
 	else if (getc() == '-') {
 		id++;
 		return -readFirst();
@@ -250,20 +237,12 @@ double Parser::readNumber() {
 	return res;
 }
 
-double Parser::readVar() {
-	for (const pair<string, double>& it : vars)
-		if (cmpWord(it.first)) {
-			id += it.first.length();
-			return it.second;
-		}
-	throw id;
-}
+double Parser::readWord() {
+	sizt end = findWordEnd();
+	string word = form->substr(id, end-id);
+	id = end;
 
-double Parser::readFunc() {
-	for (const pair<string, mfptr>& it : Default::parserFuncs)
-		if (cmpWord(it.first)) {
-			id += it.first.length() +1;	// skip '('
-			return it.second(readFirst());
-		}
-	throw id;
+	if (vars.count(word) != 0)
+		return vars[word];
+	return Default::parserFuncs.at(word)(readFirst());
 }

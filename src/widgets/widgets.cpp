@@ -143,7 +143,7 @@ bool Slider::onClick(const vec2i& mPos, uint8 mBut) {
 	if (mBut == SDL_BUTTON_LEFT) {
 		World::scene()->setCapture(this);
 		int sx = sliderX();
-		if (mPos.x < sx || mPos.x > sx + Default::sliderWidth)	// if mouse outside of slider but inside bar
+		if (outRange(mPos.x, sx, sx + Default::sliderWidth))	// if mouse outside of slider
 			setSlider(mPos.x - Default::sliderWidth/2);
 		diffSliderMouseX = mPos.x - sliderX();	// get difference between mouse x and slider x
 	} else if (mBut == SDL_BUTTON_RIGHT && rcall)

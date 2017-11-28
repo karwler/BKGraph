@@ -8,7 +8,7 @@ public:
 	static DrawSys* drawSys() { return windowSys.getDrawSys(); }
 	static WindowSys* winSys() { return &windowSys; }
 	static Scene* scene() { return windowSys.getScene(); }
-	static Program* program() { return windowSys.getScene()->getProgram(); }
+	static Program* program() { return windowSys.getProgram(); }
 
 private:
 	static WindowSys windowSys;	// the thing on which everything runs

@@ -8,7 +8,7 @@ void Scene::onKeypress(const SDL_KeyboardEvent& key) {
 	if (LineEdit* le = dynamic_cast<LineEdit*>(capture))
 		le->onKeypress(key.keysym);
 	else if (key.repeat == 0)
-		program.getState()->eventKeypress(key.keysym);
+		World::program()->getState()->eventKeypress(key.keysym);
 }
 
 void Scene::onMouseMove(const vec2i& mPos, const vec2i& mMov) {
@@ -24,7 +24,7 @@ void Scene::onMouseDown(const vec2i& mPos, uint8 mBut) {
 	else if (popup)
 		popup->onClick(mPos, mBut);
 	else if (!layout->onClick(mPos, mBut) && mBut == SDL_BUTTON_RIGHT)	// check if anything got clicked. if that's not the case and it's a right click do a blank right click
-		program.getState()->eventContextBlank();
+		World::program()->getState()->eventContextBlank();
 }
 
 void Scene::onMouseUp(uint8 mBut) {

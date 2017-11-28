@@ -52,24 +52,24 @@ void DrawSys::drawSlider(Slider* wgt, SDL_Rect frame) {
 	drawRect(box, Default::colorLight);
 }
 
-void DrawSys::drawLabel(Label* wgt, const SDL_Rect& frame) {
-	// get background rect, save text field height and draw background
-	SDL_Rect rect = wgt->rect();
-	int height = rect.h;
-	rect = overlapRect(rect, frame);
-	drawRect(rect, Default::colorNormal);
+void DrawSys::drawLabel(Label* wgt, SDL_Rect frame) {
+	// get background rect and draw background
+	frame = overlapRect(wgt->rect(), frame);
+	drawRect(frame, Default::colorNormal);
 	
 	// modify frame and draw text if exists
 	if (!wgt->getText().empty()) {
-		rect.x += Default::textOffset;
-		rect.w -= Default::textOffset*2;
-		drawText(wgt->getText(), wgt->textPos(), height, Default::colorText, rect);
+		frame.x += Default::textOffset;
+		frame.w -= Default::textOffset*2;
+		drawText(wgt->getText(), wgt->textPos(), wgt->size().y, Default::colorText, frame);
 	}
 }
 
-void DrawSys::drawGraphView(GraphView* wgt) {
-	SDL_Rect rect = wgt->rect();
-	int endy = rect.y + rect.h;
+void DrawSys::drawGraphView(GraphView* wgt, SDL_Rect frame) {
+	vec2i pos = wgt->position();
+	vec2i siz = wgt->size();
+	frame = overlapRect({pos.x, pos.y, siz.x, siz.y}, frame);
+	int fendy = frame.y + frame.h;
 
 	// draw graphs
 	for (const GraphElement& it : wgt->getGraphs()) {
@@ -79,7 +79,7 @@ void DrawSys::drawGraphView(GraphView* wgt) {
 		sizt start;
 		bool lastIn = false;
 		for (sizt x=0; x!=it.pixs.size(); x++) {
-			bool curIn = inRange(it.pixs[x].y, rect.y, endy);
+			bool curIn = inRange(it.pixs[x].y, frame.y, fendy);
 			if (curIn) {
 				if (!lastIn)
 					start = x;
@@ -92,18 +92,11 @@ void DrawSys::drawGraphView(GraphView* wgt) {
 	}
 
 	// draw lines
-	SDL_Color color = dimColor(Default::colorGraph);
-	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-	
-	vec2i lstt = dotToPix(vec2d(wgt->getViewPos().x, 0.0), wgt->getViewPos(), wgt->getViewSize(), vec2d(rect.w, rect.h)) + vec2i(rect.x, rect.y);
-	vec2i lend(lstt.x + rect.w, lstt.y);
-	if (cropLine(lstt, lend, rect))
-		SDL_RenderDrawLine(renderer, lstt.x, lstt.y, lend.x, lend.y);
+	vec2i lstt = dotToPix(vec2d(wgt->getViewPos().x, 0.0), wgt->getViewPos(), wgt->getViewSize(), vec2d(siz)) + pos;
+	drawLine(lstt, vec2i(lstt.x + frame.w, lstt.y), Default::colorGraph, frame);
 
-	lstt = dotToPix(vec2d(0.0, wgt->getViewPos().y), wgt->getViewPos(), wgt->getViewSize(), vec2d(rect.w, rect.h)) + vec2i(rect.x, rect.y);
-	lend = vec2i(lstt.x, lstt.y + rect.h);
-	if (cropLine(lstt, lend, rect))
-		SDL_RenderDrawLine(renderer, lstt.x, lstt.y, lend.x, lend.y);
+	lstt = dotToPix(vec2d(0.0, wgt->getViewPos().y), wgt->getViewPos(), wgt->getViewSize(), vec2d(siz)) + pos;
+	drawLine(lstt, vec2i(lstt.x, lstt.y + frame.h), Default::colorGraph, frame);
 }
 
 void DrawSys::drawLayout(Layout* box, SDL_Rect frame) {
@@ -143,6 +136,14 @@ void DrawSys::drawRect(const SDL_Rect& rect, SDL_Color color) {
 	color = dimColor(color);
 	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderFillRect(renderer, &rect);
+}
+
+void DrawSys::drawLine(vec2i pos, vec2i end, SDL_Color color, const SDL_Rect& frame) {
+	color = dimColor(color);
+	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+
+	if (cropLine(pos, end, frame))
+		SDL_RenderDrawLine(renderer, pos.x, pos.y, end.x, end.y);
 }
 
 void DrawSys::drawText(const string& text, const vec2i& pos, int height, SDL_Color color, const SDL_Rect& frame) {

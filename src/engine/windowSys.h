@@ -19,6 +19,7 @@ public:
 
 	DrawSys* getDrawSys() { return drawSys.get(); }
 	Scene* getScene() { return scene.get(); }
+	Program* getProgram() { return program.get(); }
 
 	const Settings& getSettings() const { return sets; }
 	FontSet& getFontSet() { return sets.fontSet; }
@@ -28,6 +29,7 @@ public:
 	void setScrollSpeed(int ss) { sets.scrollSpeed = ss; }
 
 private:
+	uptr<Program> program;
 	uptr<Scene> scene;
 	uptr<DrawSys> drawSys;
 	SDL_Window* window;

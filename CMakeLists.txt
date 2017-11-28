@@ -102,7 +102,9 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 							COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LIB_DIR}/${dll_file} ${EXECUTABLE_OUTPUT_PATH})
 	endforeach()
 endif()
-
+add_custom_command(TARGET BKGraph POST_BUILD
+					COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/rsc/BKGraph.ico ${EXECUTABLE_OUTPUT_PATH})
+					
 # filter file for ms visual studio
 foreach(source IN LISTS SRC_FILES)
 	get_filename_component(source_dir ${source} PATH)

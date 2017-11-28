@@ -21,20 +21,19 @@ private:
 	int pcnt;		// for counting opening and closing parentheses
 
 	char getc() { return (*form)[id]; }
-	char getc(sizt ofs) { return (*form)[id + ofs]; }
+	char geti(sizt i) { return (*form)[i]; }
 
 	bool isDigit();
 	bool isOperator();
-	template <typename T>
-	bool isWord(const umap<string, T>& words);
-	bool cmpWord(const string& word);
+	bool isLetter(sizt i);
+	bool isLetter() { return isLetter(id); }
+	sizt findWordEnd();
 
 	void checkFirst();
 	void checkNumber();
+	void checkWord();
 	void checkVar();
 	void checkFunc();
-	template <typename T>
-	bool checkWord(const umap<string, T>& words);
 	void checkOperator();
 	void checkParOpen();
 	void checkParClose();
@@ -44,6 +43,5 @@ private:
 	double readPower();
 	double readFirst();
 	double readNumber();
-	double readVar();
-	double readFunc();
+	double readWord();
 };

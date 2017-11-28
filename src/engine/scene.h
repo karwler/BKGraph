@@ -18,17 +18,15 @@ public:
 
 	void clearScene();
 	void resizeScene();
-	Program* getProgram() { return &program; }
+
 	Widget* getCapture() { return capture; }
 	void setCapture(Widget* cbox);
-
 	Context* getContext() { return context.get(); }
 	void setContext(Context* newContext);	// also sets context's position
 
 	uptr<Layout> layout;
 	uptr<Popup> popup;
 private:
-	Program program;
 	uptr<Context> context;
 
 	Widget* capture;	// either pointer to LineEdit currently hogging all keyboard input or ScrollArea whichs slider or Slider which is currently being dragged. nullptr if nothing is being ca[tired or dragged

@@ -111,7 +111,7 @@ const SDL_Color colorPopupDim = {2, 2, 2, 1};
 const SDL_Color colorNoDim = {1, 1, 1, 1};
 
 // files and directories
-const char fileIcon[] = "icon.ico";
+const char fileIcon[] = "BKGraph.ico";
 const char fileSettings[] = "settings.ini";
 const char fileUsers[] = "users.ini";
 

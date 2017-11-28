@@ -50,13 +50,15 @@ bool inRange(T val, T min, T max) {
 	return val >= min && val <= max;
 }
 
+template <typename T>
+bool outRange(T val, T min, T max) {
+	return val < min || val > max;
+}
+
 template <typename T>	// correct val if out of range. returns true if value already in range
-bool bringIn(T& val, T min, T max) {
+void bringIn(T& val, T min, T max) {
 	if (val < min)
 		val = min;
 	else if (val > max)
 		val = max;
-	else
-		return true;
-	return false;
 }

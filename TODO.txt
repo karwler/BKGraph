@@ -1,9 +1,10 @@
 Features:
-- need an icon (in form of an ico file in the rsc directory)
 - interaction with graphs
 - add more stuff to parser
 
 Optional:
+- improve mouse over scroll area check
+- optimize graph view/parser
 - scale label x size to text's x size
 - highlight on mouse over
 - multiple languages
@@ -14,5 +15,4 @@ Optional:
 - expand .gitignore
 
 Fixes
-- optimize graph view/parser
 - test/fix parser

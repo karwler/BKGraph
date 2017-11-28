@@ -13,14 +13,15 @@ public:
 	void drawWidgets();
 
 	void drawSlider(Slider* wgt, SDL_Rect frame);
-	void drawLabel(Label* wgt, const SDL_Rect& frame);
-	void drawGraphView(GraphView* wgt);
+	void drawLabel(Label* wgt, SDL_Rect frame);
+	void drawGraphView(GraphView* wgt, SDL_Rect frame);
 	void drawLayout(Layout* box, SDL_Rect frame);
 	void drawScrollArea(ScrollArea* box, SDL_Rect frame);
 	void drawPopup(Popup* pop, const SDL_Rect& frame);
 	void drawContext(Context* con, SDL_Rect frame);
 
 	void drawRect(const SDL_Rect& rect, SDL_Color color);
+	void drawLine(vec2i pos, vec2i end, SDL_Color color, const SDL_Rect& frame);
 	void drawText(const string& text, const vec2i& pos, int height, SDL_Color color, const SDL_Rect& frame);
 
 private:

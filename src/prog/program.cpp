@@ -46,12 +46,15 @@ void Program::eventOpenGraphColorPick(Button* but) {
 void Program::eventGraphFormulaChanged(Button* but) {
 	LineEdit* ledt = static_cast<LineEdit*>(but);
 	string str = ledt->getText();
-	if (!str.empty() && parser.check(str)) {
-		sizt id = static_cast<ProgForms*>(state.get())->getFormID(ledt);
-		forms[id].str = str;
-		ledt->setText(str);
-	} else
-		World::scene()->popup.reset(state->createPopupMessage("Invalid Formula", vec2<Size>(300, 100)));
+	if (str.empty())
+		return;
+	
+	sizt id = static_cast<ProgForms*>(state.get())->getFormID(ledt);
+	forms[id].str = str;
+	ledt->setText(str);
+
+	if (!parser.check(str))
+		World::scene()->popup.reset(state->createPopupMessage("Invalid Formula", vec2<Size>(300, 100)));	
 }
 
 void Program::eventOpenContextFormula(Button* but) {

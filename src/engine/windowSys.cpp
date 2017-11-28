@@ -17,11 +17,15 @@ int WindowSys::start() {
 		sets = Filer::loadSettings();
 		createWindow();
 		scene.reset(new Scene());
-	} catch (const string& str) {
+		program.reset(new Program());
+	} catch (const char* str) {
 		cerr << str << endl;
 		return -1;
+	} catch (...) {
+		cerr << "unknown error" << endl;
+		return -2;
 	}
-	scene->getProgram()->setState(new ProgForms);
+	program->setState(new ProgForms);
 	run = true;
 
 	// the loop :O
@@ -37,12 +41,13 @@ int WindowSys::start() {
 	}
 
 	// save changes
-	Filer::saveUsers(scene->getProgram()->getFormulas(), scene->getProgram()->getVariables());
+	Filer::saveUsers(program->getFormulas(), program->getVariables());
 	Filer::saveSettings(sets);
 
 	// cleanup
-	destroyWindow();
+	program.reset();
 	scene.reset();
+	destroyWindow();
 	TTF_Quit();
 	SDL_Quit();
 	return 0;
