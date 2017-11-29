@@ -15,7 +15,7 @@ public:
 	Popup* createPopupColorPick(SDL_Color color);
 };
 
-class ProgForms : public ProgState {
+class ProgFuncs : public ProgState {
 public:
 	virtual void eventKeypress(const SDL_Keysym& key);
 	virtual void eventBack();

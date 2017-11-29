@@ -15,14 +15,14 @@ sizt Parser::findWordEnd() {
 
 // CHECKER
 
-bool Parser::check(string formula) {
+bool Parser::check(string& function) {
 	// remove whitespaces
-	for (id=0; id!=formula.length(); id++)
-		if (formula[id] == ' ')
-			formula.erase(id--);
+	for (id=0; id!=function.length(); id++)
+		if (function[id] == ' ')
+			function.erase(id--);
 
 	// reset values
-	form = &formula;
+	func = &function;
 	id = 0;
 	pcnt = 0;
 
@@ -75,7 +75,7 @@ void Parser::checkNumber() {
 
 void Parser::checkWord() {
 	sizt end = findWordEnd();
-	string word = form->substr(id, end-id);
+	string word = func->substr(id, end-id);
 	id = end;
 
 	if (vars.count(word) != 0)
@@ -135,19 +135,13 @@ void Parser::checkParClose() {
 
 // SOLVER
 
-double Parser::solve(string& formula, double x) {
+double Parser::solve(string& function, double x) {
 	// reset values
-	form = &formula;
+	func = &function;
 	vars["x"] = x;
 	id = 0;
 
-	// do the solving
-	try {
-		return readAddSub();
-	} catch (sizt e) {
-		cerr << "solving error at " << e << endl;
-		return 0.0;
-	}
+	return readAddSub();	// do the solving
 }
 
 double Parser::readAddSub() {
@@ -190,18 +184,21 @@ double Parser::readPower() {
 double Parser::readFirst() {
 	if (isDigit(getc()))
 		return readNumber();
-	else if (getc() == '(') {
-		id++; // '('
-		double result = readAddSub();
-		id++; // ')'
-		return result;
-	} else if (isLetter(getc()))
+	else if (getc() == '(')
+		return readParentheses();
+	else if (isLetter(getc()))
 		return readWord();
 	else if (getc() == '-') {
 		id++;
-		return -readFirst();
+		return -readAddSub();
 	}
-	throw id;
+}
+
+double Parser::readParentheses() {
+	id++; // skip '('
+	double result = readAddSub();
+	id++; // skip ')'
+	return result;
 }
 
 double Parser::readNumber() {
@@ -227,10 +224,10 @@ double Parser::readNumber() {
 
 double Parser::readWord() {
 	sizt end = findWordEnd();
-	string word = form->substr(id, end-id);
+	string word = func->substr(id, end-id);
 	id = end;
 
 	if (vars.count(word))
 		return vars[word];
-	return Default::parserFuncs.at(word)(readFirst());
+	return Default::parserFuncs.at(word)(readParentheses());
 }

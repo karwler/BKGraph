@@ -174,8 +174,8 @@ void Filer::saveSettings(const Settings& sets) {
 	writeTextFile(dirExec + Default::fileSettings, lines);
 }
 
-vector<Formula> Filer::loadUsers(map<string, double>& vars) {
-	vector<Formula> forms;
+vector<Function> Filer::loadUsers(map<string, double>& vars) {
+	vector<Function> forms;
 	vector<string> lines;
 	if (!readTextFile(dirExec + Default::fileUsers, lines, false))	// if file not availibe return empty vector
 		return forms;
@@ -189,9 +189,9 @@ vector<Formula> Filer::loadUsers(map<string, double>& vars) {
 		if (il.arg == Default::iniKeywordVariable) {
 			if (vars.count(il.key) == 0)	// no variables with same name
 				vars.insert(make_pair(il.key, stod(il.val)));
-		}  else if (il.arg == Default::iniKeywordFormula) {
+		}  else if (il.arg == Default::iniKeywordFunction) {
 			vector<string> elems = getWords(il.val, ' ');
-			Formula frm("", stob(elems[0]), {uint8(stoi(elems[1])), uint8(stoi(elems[2])), uint8(stoi(elems[3])), uint8(stoi(elems[4]))});
+			Function frm("", stob(elems[0]), {uint8(stoi(elems[1])), uint8(stoi(elems[2])), uint8(stoi(elems[3])), uint8(stoi(elems[4]))});
 			for (sizt i=5; i!=elems.size(); i++)
 				frm.str += elems[i];
 			forms.push_back(frm);
@@ -200,13 +200,13 @@ vector<Formula> Filer::loadUsers(map<string, double>& vars) {
 	return forms;
 }
 
-void Filer::saveUsers(const vector<Formula>& forms, const map<string, double>& vars) {
+void Filer::saveUsers(const vector<Function>& forms, const map<string, double>& vars) {
 	vector<string> lines;
 	for (const pair<string, double>& it : vars)
 		lines.push_back(IniLine(Default::iniKeywordVariable, it.first, to_string(it.second)).line());
 
-	for (const Formula& it : forms)
-		lines.push_back(IniLine(Default::iniKeywordFormula, btos(it.show) + ' ' + to_string(short(it.color.r)) + ' ' + to_string(short(it.color.g)) + ' ' + to_string(short(it.color.b)) + ' ' + to_string(short(it.color.a)) + ' ' + it.str).line());
+	for (const Function& it : forms)
+		lines.push_back(IniLine(Default::iniKeywordFunction, btos(it.show) + ' ' + to_string(short(it.color.r)) + ' ' + to_string(short(it.color.g)) + ' ' + to_string(short(it.color.b)) + ' ' + to_string(short(it.color.a)) + ' ' + it.str).line());
 	writeTextFile(dirExec + Default::fileUsers, lines);
 }
 

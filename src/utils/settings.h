@@ -3,8 +3,8 @@
 #include "defaults.h"
 
 // I guess this is kind of part of the settings
-struct Formula {
-	Formula(const string& STR="", bool SHW=true, SDL_Color CLR=Default::colorGraph);
+struct Function {
+	Function(const string& STR="", bool SHW=true, SDL_Color CLR=Default::colorGraph);
 
 	bool show;
 	SDL_Color color;

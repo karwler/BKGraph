@@ -11,17 +11,17 @@ public:
 	void updateDelVar(const string& key) { vars.erase(key); }
 	bool isVar(const string& word) const { return vars.count(word) != 0; }
 
-	bool check(string formula);
-	double solve(string& formula, double x);
+	bool check(string& function);
+	double solve(string& function, double x);
 
 private:
 	umap<string, double> vars;	// merge of Default::parserConsts, Program::vars and x
-	string* form;	// pointer to the formula
+	string* func;	// pointer to the function
 	sizt id;		// for iterating through form
 	int pcnt;		// for counting opening and closing parentheses
 
-	char getc() { return (*form)[id]; }
-	char geti(sizt i) { return (*form)[i]; }
+	char getc() { return (*func)[id]; }
+	char geti(sizt i) { return (*func)[i]; }
 	sizt findWordEnd();
 
 	void checkFirst();
@@ -37,6 +37,7 @@ private:
 	double readMulDiv();
 	double readPower();
 	double readFirst();
+	double readParentheses();
 	double readNumber();
 	double readWord();
 };

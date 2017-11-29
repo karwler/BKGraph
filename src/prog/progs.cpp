@@ -44,23 +44,26 @@ Popup* ProgState::createPopupColorPick(SDL_Color color) {
 
 // PROG LIST
 
-void ProgForms::eventKeypress(const SDL_Keysym& key) {
+void ProgFuncs::eventKeypress(const SDL_Keysym& key) {
 	// stuff else
 	ProgState::eventKeypress(key);
 }
 
-void ProgForms::eventBack() {
-	World::program()->setState(new ProgGraph);
+void ProgFuncs::eventBack() {
+	if (World::scene()->getContext())
+		World::scene()->setContext(nullptr);
+	else
+		World::program()->setState(new ProgGraph);
 }
 
-void ProgForms::eventContextBlank() {
+void ProgFuncs::eventContextBlank() {
 	vector<Context::Item> items = {
-		Context::Item("Add Formula", &Program::eventAddFormula)
+		Context::Item("Add Function", &Program::eventAddFunction)
 	};
 	World::scene()->setContext(new Context(nullptr, items, World::winSys()->mousePos()));
 }
 
-Layout* ProgForms::createLayout() {
+Layout* ProgFuncs::createLayout() {
 	vector<Widget*> wgts = {
 		new Label("Variables", &Program::eventOpenVars, nullptr, 120),
 		new Widget(10),
@@ -74,13 +77,13 @@ Layout* ProgForms::createLayout() {
 	topbar->setWidgets(wgts);
 
 	interacts.clear();
-	const vector<Formula>& frms = World::program()->getFormulas();
+	const vector<Function>& frms = World::program()->getFunctions();
 	wgts.resize(frms.size()*2);
 	for (sizt i=0; i!=wgts.size(); i+=2) {
 		sizt id = i/2;
-		CheckBox* cb = new CheckBox(frms[id].show, &Program::eventSwitchGraphShow, &Program::eventOpenContextFormula, 30);
-		ColorBox* lb = new ColorBox(frms[id].color, &Program::eventOpenGraphColorPick, &Program::eventOpenContextFormula, 30);
-		LineEdit* le = new LineEdit(frms[id].str, &Program::eventGraphFormulaChanged, &Program::eventOpenContextFormula);
+		CheckBox* cb = new CheckBox(frms[id].show, &Program::eventSwitchGraphShow, &Program::eventOpenContextFunction, 30);
+		ColorBox* lb = new ColorBox(frms[id].color, &Program::eventOpenGraphColorPick, &Program::eventOpenContextFunction, 30);
+		LineEdit* le = new LineEdit(frms[id].str, &Program::eventGraphFunctionChanged, &Program::eventOpenContextFunction);
 		
 		interacts.insert(make_pair(cb, id));
 		interacts.insert(make_pair(lb, id));
@@ -108,7 +111,7 @@ void ProgVars::eventKeypress(const SDL_Keysym& key) {
 }
 
 void ProgVars::eventBack() {
-	World::program()->setState(new ProgForms);
+	World::program()->setState(new ProgFuncs);
 }
 
 void ProgVars::eventContextBlank() {
@@ -120,7 +123,7 @@ void ProgVars::eventContextBlank() {
 
 Layout* ProgVars::createLayout() {
 	vector<Widget*> wgts = {
-		new Label("Formulas", &Program::eventOpenForms, nullptr, 120),
+		new Label("Functions", &Program::eventOpenForms, nullptr, 130),
 		new Widget(10),
 		new Label("Graph", &Program::eventOpenGraph, nullptr, 90),
 		new Widget(10),
@@ -167,12 +170,12 @@ void ProgGraph::eventKeypress(const SDL_Keysym& key) {
 }
 
 void ProgGraph::eventBack() {
-	World::program()->setState(new ProgForms);
+	World::program()->setState(new ProgFuncs);
 }
 
 Layout* ProgGraph::createLayout() {
 	vector<Widget*> wgts ={
-		new Label("Formulas", &Program::eventOpenForms, nullptr, 120),
+		new Label("Functions", &Program::eventOpenForms, nullptr, 130),
 		new Widget(10),
 		new Label("Variables", &Program::eventOpenVars, nullptr, 120),
 		new Widget(10),
@@ -184,7 +187,7 @@ Layout* ProgGraph::createLayout() {
 	topbar->setWidgets(wgts);
 
 	gview = new GraphView();
-	gview->setGraphs(World::program()->getFormulas());
+	gview->setGraphs(World::program()->getFunctions());
 
 	Layout* lay = new Layout();
 	lay->setWidgets({topbar, new Widget(10), gview});
@@ -199,12 +202,12 @@ void ProgSettings::eventKeypress(const SDL_Keysym& key) {
 }
 
 void ProgSettings::eventBack() {
-	World::program()->setState(new ProgForms);
+	World::program()->setState(new ProgFuncs);
 }
 
 Layout* ProgSettings::createLayout() {
 	vector<Widget*> wgts = {
-		new Label("Formulas", &Program::eventOpenForms, nullptr, 120),
+		new Label("Functions", &Program::eventOpenForms, nullptr, 130),
 		new Widget(10),
 		new Label("Variables", &Program::eventOpenVars, nullptr, 120),
 		new Widget(10),

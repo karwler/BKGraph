@@ -16,13 +16,13 @@ public:
 	void eventOpenSettings(Button* but);
 	void eventExit(Button* but);
 
-	// formula view
+	// function view
 	void eventSwitchGraphShow(Button* but);
 	void eventOpenGraphColorPick(Button* but);
-	void eventGraphFormulaChanged(Button* but);
-	void eventOpenContextFormula(Button* but);
-	void eventAddFormula(Context::Item* item);
-	void eventDelFormula(Context::Item* item);
+	void eventGraphFunctionChanged(Button* but);
+	void eventOpenContextFunction(Button* but);
+	void eventAddFunction(Context::Item* item);
+	void eventDelFunction(Context::Item* item);
 
 	// graph color picker
 	void eventGraphColorPickRed(Button* but);
@@ -48,16 +48,16 @@ public:
 	// other stuff
 	ProgState* getState() { return state.get(); }
 	void setState(ProgState* newState);
-	const Formula& getFormula(sizt id) const { return forms[id]; }
-	const vector<Formula>& getFormulas() const { return forms; }
+	const Function& getFunction(sizt id) const { return funcs[id]; }
+	const vector<Function>& getFunctions() const { return funcs; }
 	const map<string, double> getVariables() const { return vars; }
-	bool isValid(sizt fid);
+	bool functionValid(sizt fid);
 	double getDotY(sizt fid, double x);
 
 private:
 	uptr<ProgState> state;
 	Parser parser;
-	vector<Formula> forms;
+	vector<Function> funcs;
 	map<string, double> vars;
 
 	bool wordValid(const string& str);

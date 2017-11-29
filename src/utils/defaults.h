@@ -99,6 +99,13 @@ const uint32 rendererFlags = SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATE
 // key bindings
 const SDL_Scancode keyBack = SDL_SCANCODE_ESCAPE;
 const SDL_Scancode keyFullscreen = SDL_SCANCODE_F11;
+const SDL_Scancode keyLeft = SDL_SCANCODE_RIGHT;
+const SDL_Scancode keyRight = SDL_SCANCODE_LEFT;
+const SDL_Scancode keyUp = SDL_SCANCODE_UP;
+const SDL_Scancode keyDown = SDL_SCANCODE_DOWN;
+const SDL_Scancode keyZoomIn = SDL_SCANCODE_PAGEUP;
+const SDL_Scancode keyZoomOut = SDL_SCANCODE_PAGEDOWN;
+const SDL_Scancode keyCenter = SDL_SCANCODE_C;
 
 // colors
 const SDL_Color colorBackground = {10, 10, 10, 255};
@@ -122,8 +129,8 @@ const char iniKeywordMaximized[] = "maximized";
 const char iniKeywordFullscreen[] = "fullscreen";
 const char iniKeywordResolution[] = "resolution";
 const char iniKeywordScrollSpeed[] = "scroll_speed";
-const char iniKeywordVariable[] = "variable";
-const char iniKeywordFormula[] = "formula";
+const char iniKeywordVariable[] = "var";
+const char iniKeywordFunction[] = "func";
 
 // parser stuff
 const map<string, double> parserConsts = {
@@ -134,6 +141,7 @@ const map<string, double> parserConsts = {
 const umap<string, mfptr> parserFuncs = {
 	pair<string, mfptr>("abs", std::abs),
 	pair<string, mfptr>("sqrt", std::sqrt),
+	pair<string, mfptr>("exp", std::exp),
 	pair<string, mfptr>("log", std::log),
 	pair<string, mfptr>("sin", std::sin),
 	pair<string, mfptr>("cos", std::cos),
@@ -143,13 +151,22 @@ const umap<string, mfptr> parserFuncs = {
 	pair<string, mfptr>("atan", std::atan),
 	pair<string, mfptr>("sinh", std::sinh),
 	pair<string, mfptr>("cosh", std::cosh),
-	pair<string, mfptr>("tanh", std::tanh)
+	pair<string, mfptr>("tanh", std::tanh),
+	pair<string, mfptr>("asinh", std::asinh),
+	pair<string, mfptr>("acosh", std::acosh),
+	pair<string, mfptr>("atanh", std::atanh),
+	pair<string, mfptr>("round", std::round),
+	pair<string, mfptr>("ceil", std::ceil),
+	pair<string, mfptr>("floor", std::floor),
+	pair<string, mfptr>("trunc", std::trunc),
 };
 
 // widgets' properties
 const int itemHeight = 30;
 const int sliderWidth = 10;
 const int caretWidth = 4;
+const vec2d viewportPosition(-1.0, 1.0);
+const vec2d viewportSize(2.0, -2.0);
 const double gvMoveFactor = 0.25;
 const double gvMouseZoomFactor = 0.01;
 const double gvKeyZoomFactor = 2.0;

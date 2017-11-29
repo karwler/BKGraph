@@ -5,7 +5,7 @@
 
 Program::Program()
 {
-	forms = Filer::loadUsers(vars);
+	funcs = Filer::loadUsers(vars);
 	parser.updateVars(vars);
 }
 
@@ -14,7 +14,7 @@ void Program::eventClosePopup(Button* but) {
 }
 
 void Program::eventOpenForms(Button* but) {
-	setState(new ProgForms);
+	setState(new ProgFuncs);
 }
 
 void Program::eventOpenVars(Button* but) {
@@ -34,47 +34,46 @@ void Program::eventExit(Button* but) {
 }
 
 void Program::eventSwitchGraphShow(Button* but) {
-	sizt id = static_cast<ProgForms*>(state.get())->getFormID(but);
-	forms[id].show = static_cast<CheckBox*>(but)->on;
+	sizt id = static_cast<ProgFuncs*>(state.get())->getFormID(but);
+	funcs[id].show = static_cast<CheckBox*>(but)->on;
 }
 
 void Program::eventOpenGraphColorPick(Button* but) {
-	static_cast<ProgForms*>(state.get())->lastClicked = but;
+	static_cast<ProgFuncs*>(state.get())->lastClicked = but;
 	World::scene()->popup.reset(state->createPopupColorPick(static_cast<ColorBox*>(but)->color));
 }
 
-void Program::eventGraphFormulaChanged(Button* but) {
+void Program::eventGraphFunctionChanged(Button* but) {
 	LineEdit* ledt = static_cast<LineEdit*>(but);
 	string str = ledt->getText();
 	if (str.empty())
 		return;
-	
-	sizt id = static_cast<ProgForms*>(state.get())->getFormID(ledt);
-	forms[id].str = str;
-	ledt->setText(str);
-
 	if (!parser.check(str))
-		World::scene()->popup.reset(state->createPopupMessage("Invalid Formula", vec2<Size>(300, 100)));	
+		World::scene()->popup.reset(state->createPopupMessage("Invalid Function", vec2<Size>(300, 100)));
+	
+	sizt id = static_cast<ProgFuncs*>(state.get())->getFormID(ledt);
+	funcs[id].str = str;
+	ledt->setText(str);
 }
 
-void Program::eventOpenContextFormula(Button* but) {
+void Program::eventOpenContextFunction(Button* but) {
 	vector<Context::Item> items = {
-		Context::Item("Delete", &Program::eventDelFormula),
-		Context::Item("Add Formula", &Program::eventAddFormula)
+		Context::Item("Delete", &Program::eventDelFunction),
+		Context::Item("Add Function", &Program::eventAddFunction)
 	};
 	World::scene()->setContext(new Context(but, items, World::winSys()->mousePos()));
 }
 
-void Program::eventAddFormula(Context::Item* item) {
-	forms.push_back(Formula());
-	setState(new ProgForms);
+void Program::eventAddFunction(Context::Item* item) {
+	funcs.push_back(Function());
+	setState(new ProgFuncs);
 }
 
-void Program::eventDelFormula(Context::Item* item) {
-	sizt id = static_cast<ProgForms*>(state.get())->getFormID(World::scene()->getContext()->getWidget());
-	forms.erase(forms.begin()+id);
+void Program::eventDelFunction(Context::Item* item) {
+	sizt id = static_cast<ProgFuncs*>(state.get())->getFormID(World::scene()->getContext()->getWidget());
+	funcs.erase(funcs.begin()+id);
 
-	setState(new ProgForms);
+	setState(new ProgFuncs);
 }
 
 void Program::eventGraphColorPickRed(Button* but) {
@@ -94,10 +93,10 @@ void Program::eventGraphColorPickAlpha(Button* but) {
 }
 
 void Program::eventGraphColorPickConfirm(Button* but) {
-	ProgForms* fstate = static_cast<ProgForms*>(state.get());
-	sizt id = static_cast<ProgForms*>(state.get())->getFormID(fstate->lastClicked);
-	forms[id].color = static_cast<ColorBox*>(World::scene()->popup->widget(0))->color;
-	setState(new ProgForms);
+	ProgFuncs* fstate = static_cast<ProgFuncs*>(state.get());
+	sizt id = static_cast<ProgFuncs*>(state.get())->getFormID(fstate->lastClicked);
+	funcs[id].color = static_cast<ColorBox*>(World::scene()->popup->widget(0))->color;
+	setState(new ProgFuncs);
 }
 
 void Program::eventVarRename(Button* but) {
@@ -183,12 +182,12 @@ void Program::setState(ProgState* newState) {
 	World::scene()->layout.reset(state->createLayout());
 }
 
-bool Program::isValid(sizt fid) {
-	return parser.check(forms[fid].str);
+bool Program::functionValid(sizt fid) {
+	return parser.check(funcs[fid].str);
 }
 
 double Program::getDotY(sizt fid, double x) {
-	return parser.solve(forms[fid].str, x);
+	return parser.solve(funcs[fid].str, x);
 }
 
 bool Program::wordValid(const string& str) {

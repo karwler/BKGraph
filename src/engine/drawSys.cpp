@@ -73,7 +73,7 @@ void DrawSys::drawGraphView(GraphView* wgt, SDL_Rect frame) {
 
 	// draw graphs
 	for (const GraphElement& it : wgt->getGraphs()) {
-		SDL_Color color = dimColor(World::program()->getFormula(it.fid).color);
+		SDL_Color color = dimColor(World::program()->getFunction(it.fid).color);
 		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 
 		sizt start;

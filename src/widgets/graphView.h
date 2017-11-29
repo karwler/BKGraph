@@ -6,7 +6,7 @@
 struct GraphElement {
 	GraphElement(sizt FID=0);
 
-	sizt fid;				// index of formula in Program::forms
+	sizt fid;				// index of function in Program::funcs
 	vector<vec2d> dots;		// positions of dots on graph
 	vector<SDL_Point> pixs;	// pixel values of dots in window
 };
@@ -14,7 +14,7 @@ struct GraphElement {
 // the thing that displays all the graphs
 class GraphView : public Widget {
 public:
-	GraphView(const Size& SIZ=Size(), const vec2d& VST=vec2d(-1.0, 1.0), const vec2d& VSZ=vec2d(2.0, -2.0));
+	GraphView(const Size& SIZ=Size(), const vec2d& VST=Default::viewportPosition, const vec2d& VSZ=Default::viewportSize);
 	virtual ~GraphView() {}
 
 	virtual void drawSelf(const SDL_Rect& frame);
@@ -28,7 +28,7 @@ public:
 	const vec2d& getViewSize() const { return viewSize; }
 	const GraphElement& getGraph(sizt id) { return graphs[id]; }
 	const vector<GraphElement> getGraphs() const { return graphs; }
-	void setGraphs(const vector<Formula>& formulas);
+	void setGraphs(const vector<Function>& formulas);
 
 private:
 	vec2d viewPos, viewSize;

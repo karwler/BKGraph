@@ -7,7 +7,7 @@ Scene::Scene() :
 void Scene::onKeypress(const SDL_KeyboardEvent& key) {
 	if (LineEdit* le = dynamic_cast<LineEdit*>(capture))
 		le->onKeypress(key.keysym);
-	else if (key.repeat == 0)
+	else if (!key.repeat)
 		World::program()->getState()->eventKeypress(key.keysym);
 }
 

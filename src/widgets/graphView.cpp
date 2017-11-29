@@ -38,19 +38,19 @@ void GraphView::onUndrag(uint8 mBut) {
 }
 
 void GraphView::onKeypress(const SDL_Keysym& key) {
-	if (key.scancode == SDL_SCANCODE_LEFT)	// go left
+	if (key.scancode == Default::keyLeft)
 		setViewPos(vec2d(viewPos.x - viewSize.x * Default::gvMoveFactor, viewPos.y));
-	else if (key.scancode == SDL_SCANCODE_RIGHT)	// go right
+	else if (key.scancode == Default::keyRight)
 		setViewPos(vec2d(viewPos.x + viewSize.x * Default::gvMoveFactor, viewPos.y));
-	else if (key.scancode == SDL_SCANCODE_UP)	// go up
+	else if (key.scancode == Default::keyUp)
 		setViewPos(vec2d(viewPos.x, viewPos.y - viewSize.y * Default::gvMoveFactor));
-	else if (key.scancode == SDL_SCANCODE_DOWN)	// go down
+	else if (key.scancode == Default::keyDown)
 		setViewPos(vec2d(viewPos.x, viewPos.y + viewSize.y * Default::gvMoveFactor));
-	else if (key.scancode == SDL_SCANCODE_PAGEUP)	// zoom in
+	else if (key.scancode == Default::keyZoomIn)
 		zoom(viewSize / Default::gvKeyZoomFactor);
-	else if (key.scancode == SDL_SCANCODE_PAGEDOWN)	// zoom out
+	else if (key.scancode == Default::keyZoomOut)
 		zoom(viewSize * Default::gvKeyZoomFactor);
-	else if (key.scancode == SDL_SCANCODE_C)	// center view
+	else if (key.scancode == Default::keyCenter)
 		setViewPos(viewSize/-2.0);
 }
 
@@ -63,9 +63,9 @@ void GraphView::onResize() {
 	updateDots();
 }
 
-void GraphView::setGraphs(const vector<Formula>& formulas) {
+void GraphView::setGraphs(const vector<Function>& formulas) {
 	for (sizt i=0; i!=formulas.size(); i++)
-		if (formulas[i].show && World::program()->isValid(i))	// if graph can and shall be drawn add it to the list
+		if (formulas[i].show && World::program()->functionValid(i))	// if graph can and shall be drawn add it to the list
 			graphs.push_back(GraphElement(i));
 	onResize();
 }

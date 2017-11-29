@@ -27,7 +27,7 @@ int WindowSys::start() {
 		cerr << "unknown error" << endl;
 		return -2;
 	}
-	program->setState(new ProgForms);
+	program->setState(new ProgFuncs);
 	run = true;
 
 	// the loop :O
@@ -43,7 +43,7 @@ int WindowSys::start() {
 	}
 
 	// save changes
-	Filer::saveUsers(program->getFormulas(), program->getVariables());
+	Filer::saveUsers(program->getFunctions(), program->getVariables());
 	Filer::saveSettings(sets);
 
 	// cleanup
