@@ -12,33 +12,35 @@ bool strcmpCI(const string& strl, const string& strr) {
 }
 
 bool findChar(const string& str, char c) {
-	for (sizt i=0; i!=str.length(); i++)
+	for (sizt i=0; i<str.length(); i++)
 		if (str[i] == c)
 			return true;
 	return false;
 }
 
 bool findChar(const string& str, char c, sizt& id) {
-	for (id=0; id!=str.length(); id++)
+	for (id=0; id<str.length(); id++)
 		if (str[id] == c)
 			return true;
 	return false;
 }
 
-vector<string> getWords(const string& line, char splitter) {
+vector<vec2t> getWords(const string& line, char spacer) {
 	sizt i = 0;
-	while (line[i] == splitter && i != line.length())	// skip first splitter chars
-		i++;
+	skipSpacers(line, i, spacer);
 
-	vector<string> words;
-	for (sizt start=i; i<=line.length(); i++)
-		if (line[i] == splitter || i == line.length()) {	// end of word
-			words.push_back(line.substr(start, i-start));	// append new word
-
-			while (line[i] == splitter && i != line.length())	// skip first splitter chars
-				i++;
-			start = i;	// new starting point for next word
-		}
+	sizt start = i;
+	vector<vec2t> words;
+	while (i < line.length()) {
+		if (line[i] == spacer) {
+			words.push_back(vec2t(start, i-start));
+			skipSpacers(line, i, spacer);
+			start = i;
+		} else
+			i++;
+	}
+	if (start < i)
+		words.push_back(vec2t(start, i-start));
 	return words;
 }
 
@@ -68,24 +70,76 @@ void cleanString(string& str, TextType type) {
 }
 
 void cleanIntString(string& str) {
-	for (sizt i=0; i!=str.length(); i++)
-		if (str[i] < '0' || str[i] > '9') {
-			str.erase(i, 1);
-			i--;
-		}
+	for (sizt i=0; i<str.length(); i++)
+		if (!isDigit(str[i]) && str[i] != ' ')
+			str.erase(i--);
 }
 
 void cleanFloatString(string& str) {
 	bool foundDot = false;
-	for (sizt i=0; i!=str.length(); i++)
-		if (str[i] < '0' || str[i] > '9') {
+	for (sizt i=0; i<str.length(); i++)
+		if (!isDigit(str[i]) && str[i] != ' ') {
 			if (str[i] == '.' && !foundDot)
 				foundDot = true;
-			else {
-				str.erase(i, 1);
-				i--;
-			}
+			else
+				str.erase(i--);
 		}
+}
+
+bool isAbsolute(const string& path) {
+	if (path.empty())
+		return false;
+	return path[0] == dsep || (path.length() >= 3 && isCapitalLetter(path[0]) && path[1] == ':' && path[2] == dsep);
+}
+
+string appendDsep(const string& path) {
+	if (path.empty())
+		return string(1, dsep);
+	return (path.back() == dsep) ? path : path + dsep;
+}
+
+bool isDriveLetter(const string& path) {
+	return (path.length() == 2 && isCapitalLetter(path[0]) && path[1] == ':') || (path.length() == 3 && isCapitalLetter(path[0]) && path[1] == ':' && path[2] == dsep);
+}
+
+string parentDir(const string& path) {
+	sizt start = (path[path.length()-1] == dsep) ? path.length()-2 : path.length()-1;
+	for (sizt i=start; i!=SIZE_MAX; i--)
+		if (path[i] == dsep)
+			return path.substr(0, i+1);
+	return path;
+}
+
+string filename(const string& path) {
+	for (sizt i=path.length()-1; i!=SIZE_MAX; i--)
+		if (path[i] == dsep)
+			return path.substr(i+1);
+	return path;
+}
+
+string extension(const string& path) {
+	for (sizt i=path.length()-1; i!=SIZE_MAX; i--)
+		if (path[i] == '.')
+			return path.substr(i+1);
+	return "";
+}
+
+bool hasExtension(const string& path, const string& ext) {
+	if (path.length() < ext.length())
+		return false;
+
+	sizt pos = path.length() - ext.length();
+	for (sizt i=0; i<ext.length(); i++)
+		if (path[pos+i] != ext[i])
+			return false;
+	return true;
+}
+
+string delExtension(const string& path) {
+	for (sizt i=path.length()-1; i!=SIZE_MAX; i--)
+		if (path[i] == '.')
+			return path.substr(0, i);
+	return path;
 }
 
 string wtos(const wstring& wstr) {
@@ -157,15 +211,21 @@ SDL_Rect overlapRect(const SDL_Rect& a, const SDL_Rect& b)  {
 
 bool cropLine(vec2i& pos, vec2i& end, const SDL_Rect& frame) {
 	vec2i fend(frame.x + frame.w, frame.y + frame.h);
-	if (pos.x > fend.x || pos.y > fend.y || end.x < frame.x || end.y < frame.y)
-		return false;
+	vec2f dots[5] = {
+		vec2f(frame.x, frame.y),
+		vec2f(fend.x, frame.y),
+		vec2f(fend.x, fend.y),
+		vec2f(frame.x, fend.y),
+		vec2f(frame.x, frame.y)
+	};
+	
+	vec2f vec = end - pos;
+	vec2f ins[2];
+	uint8 hits = 0;
+	for (uint8 i=0; i<4 && hits<2; i++)
+		hits += intersect(ins[hits], ins[hits+1], vec2f(pos), vec, dots[i], dots[i+1]-dots[i]);
 
-	if (pos.x < frame.x)	// left
-		pos.x = frame.x;
-	if (end.x > fend.x)		// right
-		end.x = fend.x;
-	if (pos.y < frame.y)	// top
-		pos.y = frame.y;
-	if (end.y > fend.y)		// bottom
-		end.y = fend.y;
+	pos = ins[0];
+	end = ins[1];
+	return hits == 2;
 }

@@ -72,13 +72,13 @@ void DrawSys::drawGraphView(GraphView* wgt, SDL_Rect frame) {
 	int fendy = frame.y + frame.h;
 
 	// draw graphs
-	for (const GraphElement& it : wgt->getGraphs()) {
+	for (const Graph& it : wgt->getGraphs()) {
 		SDL_Color color = dimColor(World::program()->getFunction(it.fid).color);
 		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 
 		sizt start;
 		bool lastIn = false;
-		for (sizt x=0; x!=it.pixs.size(); x++) {
+		for (sizt x=0; x<it.pixs.size(); x++) {
 			bool curIn = inRange(it.pixs[x].y, frame.y, fendy);
 			if (curIn) {
 				if (!lastIn)
@@ -90,12 +90,12 @@ void DrawSys::drawGraphView(GraphView* wgt, SDL_Rect frame) {
 		if (lastIn)
 			SDL_RenderDrawLines(renderer, &it.pixs[start], it.pixs.size()-start);
 	}
-
+	
 	// draw lines
-	vec2i lstt = dotToPix(vec2d(wgt->getViewPos().x, 0.0), wgt->getViewPos(), wgt->getViewSize(), vec2d(siz)) + pos;
+	vec2i lstt = vec2i(dotToPix(vec2d(World::winSys()->getSettings().viewPos.x, 0.0), World::winSys()->getSettings().viewPos, World::winSys()->getSettings().viewSize, vec2d(siz))) + pos;
 	drawLine(lstt, vec2i(lstt.x + frame.w, lstt.y), Default::colorGraph, frame);
 
-	lstt = dotToPix(vec2d(0.0, wgt->getViewPos().y), wgt->getViewPos(), wgt->getViewSize(), vec2d(siz)) + pos;
+	lstt = vec2i(dotToPix(vec2d(0.0, World::winSys()->getSettings().viewPos.y), World::winSys()->getSettings().viewPos, World::winSys()->getSettings().viewSize, vec2d(siz))) + pos;
 	drawLine(lstt, vec2i(lstt.x, lstt.y + frame.h), Default::colorGraph, frame);
 }
 
@@ -108,8 +108,8 @@ void DrawSys::drawLayout(Layout* box, SDL_Rect frame) {
 void DrawSys::drawScrollArea(ScrollArea* box, SDL_Rect frame) {
 	frame = overlapRect(box->rect(), frame);	// get new frame
 	vec2t interval = box->visibleItems();	// get index interval of items on screen and draw children
-	for (sizt i=interval.x; i<=interval.y; i++)
-		box->widget(i)->drawSelf(frame);
+	for (sizt i=interval.l; i<=interval.u; i++)
+		box->getWidget(i)->drawSelf(frame);
 
 	// draw scroll bar
 	drawRect(overlapRect(box->barRect(), frame), Default::colorDark);
@@ -128,7 +128,7 @@ void DrawSys::drawContext(Context* con, SDL_Rect frame) {
 	
 	// draw items
 	const vector<Context::Item>& items = con->getItems();
-	for (sizt i=0; i!=items.size(); i++)
+	for (sizt i=0; i<items.size(); i++)
 		drawText(items[i].text, con->itemPos(i), Default::itemHeight, Default::colorText, frame);
 }
 

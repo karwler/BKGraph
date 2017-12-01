@@ -23,6 +23,11 @@ public:
 
 	const Settings& getSettings() const { return sets; }
 	FontSet& getFontSet() { return sets.fontSet; }
+	void setResolution(const vec2i& res);
+	void setResolution(const string& line);
+	void setViewPos(const vec2d& pos) { sets.viewPos = pos; }
+	void setViewSize(const vec2d& size) { sets.viewSize = size; }
+	void setViewport(const string& line);
 	void setRenderer(const string& name);
 	void setFullscreen(bool on);
 	void setFont(const string& font);

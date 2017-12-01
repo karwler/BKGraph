@@ -1,10 +1,10 @@
 #pragma once
 
 #include "widgets.h"
-#include "utils/settings.h"
+#include "utils/functions.h"
 
-struct GraphElement {
-	GraphElement(sizt FID=0);
+struct Graph {
+	Graph(sizt FID=0);
 
 	sizt fid;				// index of function in Program::funcs
 	vector<vec2d> dots;		// positions of dots on graph
@@ -14,7 +14,7 @@ struct GraphElement {
 // the thing that displays all the graphs
 class GraphView : public Widget {
 public:
-	GraphView(const Size& SIZ=Size(), const vec2d& VST=Default::viewportPosition, const vec2d& VSZ=Default::viewportSize);
+	GraphView(const Size& SIZ=Size());
 	virtual ~GraphView() {}
 
 	virtual void drawSelf(const SDL_Rect& frame);
@@ -24,17 +24,14 @@ public:
 	virtual void onKeypress(const SDL_Keysym& key);
 	virtual void onResize();
 
-	const vec2d& getViewPos() const { return viewPos; }
-	const vec2d& getViewSize() const { return viewSize; }
-	const GraphElement& getGraph(sizt id) { return graphs[id]; }
-	const vector<GraphElement> getGraphs() const { return graphs; }
+	const Graph& getGraph(sizt id) { return graphs[id]; }
+	const vector<Graph> getGraphs() const { return graphs; }
 	void setGraphs(const vector<Function>& formulas);
 
 private:
-	vec2d viewPos, viewSize;
-	vector<GraphElement> graphs;
+	vector<Graph> graphs;
 
 	void updateDots();
 	void setViewPos(const vec2d& newPos);
-	void zoom(const vec2d& newSize);
+	void setViewSize(const vec2d& newSize);
 };

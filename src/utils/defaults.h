@@ -7,7 +7,6 @@
 
 #include "utils/vec2.h"
 
-#include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <string>
@@ -61,7 +60,8 @@ using vec2f = vec2<float>;
 using vec2d = vec2<double>;
 using vec2t = vec2<sizt>;
 
-using mfptr = double (*)(double);	// math function pointer
+using mf1ptr = double (*)(double);	// math function (one arg) pointer
+using mf2ptr = double (*)(double, double);	// math function (two args) pointer
 
 // get rid of SDL's main
 #ifdef main
@@ -87,6 +87,8 @@ namespace Default {
 const bool maximized = false;
 const bool fullscreen = false;
 const vec2i resolution(800, 600);
+const vec2d viewportPosition(-1.0, 1.0);
+const vec2d viewportSize(2.0, -2.0);
 const char font[] = "arial";
 const int scrollSpeed = 8;
 
@@ -106,6 +108,7 @@ const SDL_Scancode keyDown = SDL_SCANCODE_DOWN;
 const SDL_Scancode keyZoomIn = SDL_SCANCODE_PAGEUP;
 const SDL_Scancode keyZoomOut = SDL_SCANCODE_PAGEDOWN;
 const SDL_Scancode keyCenter = SDL_SCANCODE_C;
+const SDL_Scancode keyZoomReset = SDL_SCANCODE_X;
 
 // colors
 const SDL_Color colorBackground = {10, 10, 10, 255};
@@ -128,6 +131,7 @@ const char iniKeywordRenderer[] = "renderer";
 const char iniKeywordMaximized[] = "maximized";
 const char iniKeywordFullscreen[] = "fullscreen";
 const char iniKeywordResolution[] = "resolution";
+const char iniKeywordViewport[] = "viewport";
 const char iniKeywordScrollSpeed[] = "scroll_speed";
 const char iniKeywordVariable[] = "var";
 const char iniKeywordFunction[] = "func";
@@ -138,35 +142,35 @@ const map<string, double> parserConsts = {
 	pair<string, double>("pi", 3.1415926535897932),
 	pair<string, double>("e", 2.7182818284590452)
 };
-const umap<string, mfptr> parserFuncs = {
-	pair<string, mfptr>("abs", std::abs),
-	pair<string, mfptr>("sqrt", std::sqrt),
-	pair<string, mfptr>("exp", std::exp),
-	pair<string, mfptr>("log", std::log),
-	pair<string, mfptr>("sin", std::sin),
-	pair<string, mfptr>("cos", std::cos),
-	pair<string, mfptr>("tan", std::tan),
-	pair<string, mfptr>("asin", std::asin),
-	pair<string, mfptr>("acos", std::acos),
-	pair<string, mfptr>("atan", std::atan),
-	pair<string, mfptr>("sinh", std::sinh),
-	pair<string, mfptr>("cosh", std::cosh),
-	pair<string, mfptr>("tanh", std::tanh),
-	pair<string, mfptr>("asinh", std::asinh),
-	pair<string, mfptr>("acosh", std::acosh),
-	pair<string, mfptr>("atanh", std::atanh),
-	pair<string, mfptr>("round", std::round),
-	pair<string, mfptr>("ceil", std::ceil),
-	pair<string, mfptr>("floor", std::floor),
-	pair<string, mfptr>("trunc", std::trunc),
+const umap<string, mf1ptr> parserFuncs = {
+	pair<string, mf1ptr>("abs", std::abs),
+	pair<string, mf1ptr>("sqrt", std::sqrt),
+	pair<string, mf1ptr>("cbrt", std::cbrt),
+	pair<string, mf1ptr>("exp", std::exp),
+	pair<string, mf1ptr>("ln", std::log),
+	pair<string, mf1ptr>("log", std::log10),
+	pair<string, mf1ptr>("sin", std::sin),
+	pair<string, mf1ptr>("cos", std::cos),
+	pair<string, mf1ptr>("tan", std::tan),
+	pair<string, mf1ptr>("asin", std::asin),
+	pair<string, mf1ptr>("acos", std::acos),
+	pair<string, mf1ptr>("atan", std::atan),
+	pair<string, mf1ptr>("sinh", std::sinh),
+	pair<string, mf1ptr>("cosh", std::cosh),
+	pair<string, mf1ptr>("tanh", std::tanh),
+	pair<string, mf1ptr>("asinh", std::asinh),
+	pair<string, mf1ptr>("acosh", std::acosh),
+	pair<string, mf1ptr>("atanh", std::atanh),
+	pair<string, mf1ptr>("round", std::round),
+	pair<string, mf1ptr>("ceil", std::ceil),
+	pair<string, mf1ptr>("floor", std::floor),
+	pair<string, mf1ptr>("trunc", std::trunc),
 };
 
 // widgets' properties
 const int itemHeight = 30;
 const int sliderWidth = 10;
 const int caretWidth = 4;
-const vec2d viewportPosition(-1.0, 1.0);
-const vec2d viewportSize(2.0, -2.0);
 const double gvMoveFactor = 0.25;
 const double gvMouseZoomFactor = 0.01;
 const double gvKeyZoomFactor = 2.0;

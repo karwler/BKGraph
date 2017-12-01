@@ -26,6 +26,7 @@ All above mentioned libraries need to be installed manually.
 The default font is set to "Arial" so you'll probably need to install some kind of "ttf-ms-fonts" package.  
 If you don't want to install any new fonts you can put an "arial.ttf" file in the executable's directory or change the default font in "src/utils/defaults.h" or run the program once and change the font in "settings.ini".  
 You can use the "run.sh" script if the compiler creates a shared object rather than an executable and you can't start the program normally.  
+There's also a launcher (.desktop file) in the "rsc" directory. You just have to set "Exec" and "Icon" to the executable's and icon't path.  
 
 ### Windows
 CMakeLists.txt and included libraries are set up for MS Visual Studio.  
@@ -39,18 +40,18 @@ Left checkbox controls whether function will be drawn.
 The box between the checkbox and input field sets the graph's color.  
 
 Supported operations, constants and functions are:  
-- +, -, *, /, ^ (addition, subtraction, multiplication, division, power)  
+- +, -, *, /, ^, ! (addition, subtraction/negation, multiplication, division, power, factorial)  
 - pi (π)  
 - e (Euler's number)  
 - abs (absolute value)  
-- sqrt (square root)  
+- sqrt, cbrt (square/cube root)  
 - exp (Euler's number raised to the given exponent)  
-- log (natural logarithm)  
+- ln, log (natural/common logarithm)  
 - sin, cos, tan (sine, cosine, tangent)  
 - asin, acos, atan (inverse sine/cosine/tangent)  
 - sinh, cosh, tanh (hyperbolic sine/cosine/tangent)  
 - asinh, acosh, atanh (inverse hyperbolic sine/cosine/tangent)  
-- round, floor, ceil (round normally/downwards/upwards)  
+- round, floor, ceil (round nearest/downwards/upwards)  
 - trunc (cut off decimal part)  
 
 ### Variable View
@@ -59,6 +60,7 @@ Left input field sets the variable name and the right one sets it's value.
 Variable names can consist of upper-/lowercase letters from "A" to "Z" and "_".  
 
 ### Graph View
-You can move the viewport either by holding the left mouse button and moving the mouse or using the arrow keys.  
-You can zoom either by holding Alt and the left mouse button and moving the mouse left or right or using the Page Up/Down keys.  
-
+To move the viewport either hold down the left mouse button and move the mouse or use the arrow keys.  
+To zoom either hold down Alt and the left mouse button and mov the mouse left or right or use the Page Up/Down keys.  
+To center the viewport press C.  
+To reset the viewoprt size press X.  

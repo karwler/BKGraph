@@ -15,7 +15,7 @@ public:
 	bool getVertical() const { return vertical; }
 	void setVertical(bool yes);
 
-	Widget* widget(sizt id) const { return wgts[id]; }
+	Widget* getWidget(sizt id) { return wgts[id]; }
 	const vector<Widget*>& getWidgets() const { return wgts; }
 	void setWidgets(const vector<Widget*>& widgets);
 

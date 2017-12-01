@@ -1,10 +1,9 @@
 Features:
 - interaction with graphs
-- add more stuff to parser
 
 Optional:
 - improve mouse over scroll area check
-- optimize graph view/parser
+- save/load functions and variables
 - scale label x size to text's x size
 - highlight on mouse over
 - multiple languages

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "utils/functions.h"
 #include "utils/settings.h"
 
 enum FileType : uint8 {
@@ -7,13 +8,13 @@ enum FileType : uint8 {
 	FTYPE_DIR  = 0x2,
 	FTYPE_LINK = 0x4
 };
-FileType operator~(FileType a);
-FileType operator&(FileType a, FileType b);
-FileType operator&=(FileType& a, FileType b);
-FileType operator^(FileType a, FileType b);
-FileType operator^=(FileType& a, FileType b);
-FileType operator|(FileType a, FileType b);
-FileType operator|=(FileType& a, FileType b);
+inline FileType operator~(FileType a) { return static_cast<FileType>(~static_cast<uint8>(a)); }
+inline FileType operator&(FileType a, FileType b) { return static_cast<FileType>(static_cast<uint8>(a) & static_cast<uint8>(b)); }
+inline FileType operator&=(FileType& a, FileType b) { return a = static_cast<FileType>(static_cast<uint8>(a) & static_cast<uint8>(b)); }
+inline FileType operator^(FileType a, FileType b) { return static_cast<FileType>(static_cast<uint8>(a) ^ static_cast<uint8>(b)); }
+inline FileType operator^=(FileType& a, FileType b) { return a = static_cast<FileType>(static_cast<uint8>(a) ^ static_cast<uint8>(b)); }
+inline FileType operator|(FileType a, FileType b) { return static_cast<FileType>(static_cast<uint8>(a) | static_cast<uint8>(b)); }
+inline FileType operator|=(FileType& a, FileType b) { return a = static_cast<FileType>(static_cast<uint8>(a) | static_cast<uint8>(b)); }
 
 struct IniLine {
 	IniLine();
@@ -66,13 +67,3 @@ private:
 	static string checkDirForFont(const string& font, const string& dir);	// necessary for FindFont()
 	static std::istream& readLine(std::istream& ifs, string& str);
 };
-
-// path functions
-bool isAbsolute(const string& path);
-string getParentPath(const string& path);
-string getFilename(const string& path);	// get filename from path
-string getExt(const string& path);		// get file extension
-bool hasExt(const string& path, const string& ext);	// whether file has an extension
-string delExt(const string& path);		// returns filepath without extension
-string appendDsep(const string& path);	// append directory separator if necessary
-bool isDriveLetter(const string& path);	// check if path is a drive letter (plus colon and optionally dsep). only for windows

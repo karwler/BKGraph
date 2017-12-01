@@ -7,6 +7,8 @@ void ProgState::eventKeypress(const SDL_Keysym& key) {
 		World::winSys()->setFullscreen(!World::winSys()->getSettings().fullscreen);
 	else if (key.scancode == Default::keyBack)
 		eventBack();
+	else if (key.scancode == SDL_SCANCODE_APPLICATION)
+		eventContextBlank();
 }
 
 Popup* ProgState::createPopupMessage(const string& msg, const vec2<Size>& size) {
@@ -29,15 +31,29 @@ Popup* ProgState::createPopupMessage(const string& msg, const vec2<Size>& size) 
 }
 
 Popup* ProgState::createPopupColorPick(SDL_Color color) {
+	Layout* red = new Layout(1.f, false);
+	red->setWidgets({new Label("R:", nullptr, nullptr, 60), new Slider(0, 255, color.r, &Program::eventGraphColorPickRed), new Widget(10)});
+	Layout* green = new Layout(1.f, false);
+	green->setWidgets({new Label("G:", nullptr, nullptr, 60), new Slider(0, 255, color.g, &Program::eventGraphColorPickGreen), new Widget(10)});
+	Layout* blue = new Layout(1.f, false);
+	blue->setWidgets({new Label("B:", nullptr, nullptr, 60), new Slider(0, 255, color.b, &Program::eventGraphColorPickBlue), new Widget(10)});
+	Layout* alpha = new Layout(1.f, false);
+	alpha->setWidgets({new Label("A:", nullptr, nullptr, 60), new Slider(0, 255, color.a, &Program::eventGraphColorPickAlpha), new Widget(10)});
+
 	vector<Widget*> a = {
 		new ColorBox(color),
-		new Slider(0, 255, color.r, &Program::eventGraphColorPickRed),
-		new Slider(0, 255, color.g, &Program::eventGraphColorPickGreen),
-		new Slider(0, 255, color.b, &Program::eventGraphColorPickBlue),
-		new Slider(0, 255, color.a, &Program::eventGraphColorPickAlpha),
+		new Widget(0.1f),
+		red,
+		new Widget(0.1f),
+		green,
+		new Widget(0.1f),
+		blue,
+		new Widget(0.1f),
+		alpha,
+		new Widget(0.1f),
 		new Label("Ok", &Program::eventGraphColorPickConfirm, nullptr, 1.f, Alignment::center)
 	};
-	Popup* p = new Popup(vec2<Size>(0.5f, 0.5f));
+	Popup* p = new Popup(vec2<Size>(400, 300));
 	p->setWidgets(a);
 	return p;
 }
@@ -79,11 +95,11 @@ Layout* ProgFuncs::createLayout() {
 	interacts.clear();
 	const vector<Function>& frms = World::program()->getFunctions();
 	wgts.resize(frms.size()*2);
-	for (sizt i=0; i!=wgts.size(); i+=2) {
+	for (sizt i=0; i<wgts.size(); i+=2) {
 		sizt id = i/2;
 		CheckBox* cb = new CheckBox(frms[id].show, &Program::eventSwitchGraphShow, &Program::eventOpenContextFunction, 30);
 		ColorBox* lb = new ColorBox(frms[id].color, &Program::eventOpenGraphColorPick, &Program::eventOpenContextFunction, 30);
-		LineEdit* le = new LineEdit(frms[id].str, &Program::eventGraphFunctionChanged, &Program::eventOpenContextFunction);
+		LineEdit* le = new LineEdit(frms[id].text, &Program::eventGraphFunctionChanged, &Program::eventOpenContextFunction);
 		
 		interacts.insert(make_pair(cb, id));
 		interacts.insert(make_pair(lb, id));
@@ -218,19 +234,27 @@ Layout* ProgSettings::createLayout() {
 	Layout* topbar = new Layout(30, false);
 	topbar->setWidgets(wgts);
 
-	Layout* font = new Layout(30, false);
-	font->setWidgets({new Label("Font:", nullptr, nullptr, 200), new Widget(10), new LineEdit(World::winSys()->getSettings().font, &Program::eventSettingFont)});
+	Layout* view = new Layout(30, false);
+	view->setWidgets({new Label("Viewport:", nullptr, nullptr, 200), new Widget(10), new LineEdit(World::winSys()->getSettings().getViewportString(), &Program::eventSettingViewport)});
+	Layout* reso = new Layout(30, false);
+	reso->setWidgets({new Label("Resolution:", nullptr, nullptr, 200), new Widget(10), new LineEdit(World::winSys()->getSettings().getResolutionString(), &Program::eventSettingResolution)});
 	Layout* fullscreen = new Layout(30, false);
 	fullscreen->setWidgets({new Label("Fullscreen:", nullptr, nullptr, 200), new Widget(10), new CheckBox(World::winSys()->getSettings().fullscreen, &Program::eventSettingFullscreen, nullptr, 30), new Button()});
+	Layout* font = new Layout(30, false);
+	font->setWidgets({new Label("Font:", nullptr, nullptr, 200), new Widget(10), new LineEdit(World::winSys()->getSettings().font, &Program::eventSettingFont)});
 	Layout* renderer = new Layout(30, false);
 	renderer->setWidgets({new Label("Renderer:", nullptr, nullptr, 200), new Widget(10), new Label(World::winSys()->getSettings().renderer, &Program::eventSettingRendererOpen, nullptr, 2.f)});
 	Layout* speed = new Layout(30, false);
 	speed->setWidgets({new Label("Scroll Speed:", nullptr, nullptr, 200), new Widget(10), new LineEdit(to_string(World::winSys()->getSettings().scrollSpeed), &Program::eventSettingScrollSpeed, nullptr, 1.f, TextType::integer)});
 	
 	wgts = {
-		font,
+		view,
+		new Widget(10),
+		reso,
 		new Widget(10),
 		fullscreen,
+		new Widget(10),
+		font,
 		new Widget(10),
 		renderer,
 		new Widget(10),

@@ -6,97 +6,102 @@ void Parser::updateVars(const map<string, double>& pvars) {
 	vars.insert(vars.begin(), vars.end());
 }
 
-sizt Parser::findWordEnd() {
-	sizt i = id;
-	while (isLetter(geti(i)))
-		i++;
-	return i;
-}
+Subfunction* Parser::createTree(const string& function) {
+	// set and format function string
+	func = function;
+	formatIgnores();
+	formatMultiplication();
 
-// CHECKER
-
-bool Parser::check(string& function) {
-	// remove whitespaces
-	for (id=0; id!=function.length(); id++)
-		if (function[id] == ' ')
-			function.erase(id--);
-
-	// reset values
-	func = &function;
+	// check if syntax is correct
 	id = 0;
 	pcnt = 0;
-
-	// do the checking
 	try {
 		checkFirst();
 		if (pcnt != 0)
 			throw id;
 	} catch (sizt e) {
 		cerr << "syntax error at " << e << endl;
-		return false;
+		return nullptr;
 	}
-	return true;
+
+	// create subfunction tree
+	id = 0;
+	return readAddSub();
 }
 
+// FORMATTER
+
+void Parser::formatIgnores() {
+	for (id=0; id<func.length(); id++)
+		if (!isMathChar(func[id]))
+			func.erase(id--);
+}
+
+void Parser::formatMultiplication() {
+	for (id=0; id<func.length(); id++) {
+		sizt in = id + 1;
+		bool number = isNumber(func[in]);
+		bool letter = isLetter(func[in]);
+
+		if ((isNumber(func[id]) && (letter || func[in] == '(')) || (isLetter(func[id]) && (number || func[in] == '(')) || (func[id] == ')' && (number || letter || func[in] == '('))) {
+			func.insert(in, "*");
+			id = in;
+		}
+	}
+}
+
+// CHECKER
+
 void Parser::checkFirst() {
-	if (isDigit(getc()))
+	if (isNumber(func[id]))
 		checkNumber();
-	else if (isLetter(getc()))
+	else if (isLetter(func[id]))
 		checkWord();
-	else if (getc() == '-')
-		checkOperator();
-	else if (getc() == '(')
+	else if (func[id] == '(')
 		checkParOpen();
+	else if (func[id] == '-')
+		checkOperator();
+	else if (func[id] == '!')
+		checkFactorial();
 	else
 		throw id;
 }
 
 void Parser::checkNumber() {
-	id++;
-	while (isDigit(getc()))
-		id++;
+	if (func[id] != '.')
+		while (isDigit(func[++id]));
+	if (func[id] == '.')
+		while (isDigit(func[++id]));
 
-	if (getc() == '.') {
-		id++;
-		if (!isDigit(getc()))
-			throw id;
-
-		while (isDigit(getc()))
-			id++;
-	}
-
-	if (isOperator(getc()))
+	if (isOperator(func[id]))
 		checkOperator();
-	else if (getc() == ')')
+	else if (func[id] == ')')
 		checkParClose();
-	else if (getc() != '\0')
+	else if (func[id] != '\0')
 		throw id;
 }
 
 void Parser::checkWord() {
-	sizt end = findWordEnd();
-	string word = func->substr(id, end-id);
-	id = end;
-
-	if (vars.count(word) != 0)
+	string word = jumpWord();
+	if (vars.count(word))
 		checkVar();
-	else if (Default::parserFuncs.count(word) != 0)
+	else if (Default::parserFuncs.count(word))
 		checkFunc();
 	else
 		throw id;
 }
 
 void Parser::checkVar() {
-	if (isOperator(getc()))
+	if (isOperator(func[id]))
 		checkOperator();
-	else if (getc() == ')')
+	else if (func[id] == ')')
 		checkParClose();
-	else if (getc() != '\0')
+	else if (func[id] != '\0')
 		throw id;
 }
 
 void Parser::checkFunc() {
-	if (getc() == '(')
+	if (func[id] == '(')
 		checkParOpen();
 	else
 		throw id;
@@ -104,12 +109,30 @@ void Parser::checkFunc() {
 
 void Parser::checkOperator() {
 	id++;
-	if (isDigit(getc()))
+	if (isNumber(func[id]))
 		checkNumber();
-	else if (getc() == '(')
-		checkParOpen();
-	else if (isLetter(getc()))
+	else if (isLetter(func[id]))
 		checkWord();
+	else if (func[id] == '(')
+		checkParOpen();
+	else if (func[id] == '-')
+		checkOperator();
+	else if (func[id] == '!')
+		checkFactorial();
+	else
+		throw id;
+}
+
+void Parser::checkFactorial() {
+	id++;
+	if (isNumber(func[id]))
+		checkNumber();
+	else if (isLetter(func[id]))
+		checkWord();
+	else if (func[id] == '(')
+		checkParOpen();
+	else if (func[id] == '-')
+		checkOperator();
 	else
 		throw id;
 }
@@ -118,116 +141,102 @@ void Parser::checkParOpen() {
 	id++;
 	pcnt++;
 
-	readFirst();
+	checkFirst();
 }
 
 void Parser::checkParClose() {
 	id++;
 	pcnt--;
 
-	if (isOperator(getc()))
+	if (isOperator(func[id]))
 		checkOperator();
-	else if (getc() == ')')
+	else if (func[id] == ')')
 		checkParClose();
-	else if (getc() != '\0')
+	else if (func[id] != '\0')
 		throw id;
 }
 
-// SOLVER
+// READER
 
-double Parser::solve(string& function, double x) {
-	// reset values
-	func = &function;
-	vars["x"] = x;
-	id = 0;
-
-	return readAddSub();	// do the solving
-}
-
-double Parser::readAddSub() {
-	double res = readMulDiv();
-	while (getc() == '+' || getc() == '-') {
-		if (getc() == '+') {
-			id++;
-			res += readMulDiv();
-		} else {
-			id++;
-			res -= readMulDiv();
-		}
+Subfunction* Parser::readAddSub() {
+	Subfunction* res = readMulDiv();
+	while (func[id] == '+' || func[id] == '-') {
+		mf2ptr mfp = (func[id++] == '+') ? dAdd : dSub;
+		res = new SubfunctionF2(mfp, res, readMulDiv());
 	}
 	return res;
 }
 
-double Parser::readMulDiv() {
-	double res = readPower();
-	while (getc() == '*' || getc() == '/') {
-		if (getc() == '*') {
-			id++;
-			res *= readPower();
-		} else {
-			id++;
-			res /= readPower();
-		}
+Subfunction* Parser::readMulDiv() {
+	Subfunction* res = readPower();
+	while (func[id] == '*' || func[id] == '/') {
+		mf2ptr mfp = (func[id++] == '*') ? dMul : dDiv;
+		res = new SubfunctionF2(mfp, res, readPower());
 	}
 	return res;
 }
 
-double Parser::readPower() {
-	double res = readFirst();
-	while (getc() == '^') {
+Subfunction* Parser::readPower() {
+	Subfunction* res = readFirst();
+	while (func[id] == '^') {
 		id++;
-		res = std::pow(res, readFirst());
+		res = new SubfunctionF2(std::pow, res, readFirst());
 	}
 	return res;
 }
 
-double Parser::readFirst() {
-	if (isDigit(getc()))
+Subfunction* Parser::readFirst() {
+	if (isNumber(func[id]))
 		return readNumber();
-	else if (getc() == '(')
-		return readParentheses();
-	else if (isLetter(getc()))
+	else if (isLetter(func[id]))
 		return readWord();
-	else if (getc() == '-') {
-		id++;
-		return -readAddSub();
+	else if (func[id] == '(')
+		return readParentheses();
+	else if (func[id] == '-' || func[id] == '!') {
+		mf1ptr mfp = (func[id++] == '-') ? dNeg : dFac;
+		return new SubfunctionF1(mfp, readFirst());
 	}
 }
 
-double Parser::readParentheses() {
+Subfunction* Parser::readParentheses() {
 	id++; // skip '('
-	double result = readAddSub();
+	Subfunction* res = readAddSub();
 	id++; // skip ')'
-	return result;
+	return res;
 }
 
-double Parser::readNumber() {
-	double res = getc() - '0';
-	id++;
-	while (isDigit(getc())) {
-		res = res*10.0 + double(getc() - '0');
-		id++;
-	}
-
-	if (getc() == '.') {
-		id++;
+Subfunction* Parser::readNumber() {
+	double res = 0.0;
+	if (func[id] != '.')
+		while (isDigit(func[id])) 
+			res = res*10.0 + double(func[id++] - '0');
+	
+	if (func[id] == '.') {
 		double fact = 1.0;
-		while (isDigit(getc())) {
-			res = res*10.0 + double(getc() - '0');
+		while (isDigit(func[++id])) {
+			res = res*10.0 + double(func[id] - '0');
 			fact /= 10.0;
-			id++;
 		}
 		res *= fact;
 	}
-	return res;
+	return new SubfunctionNum(res);
 }
 
-double Parser::readWord() {
-	sizt end = findWordEnd();
-	string word = func->substr(id, end-id);
-	id = end;
-
+Subfunction* Parser::readWord() {
+	string word = jumpWord();
 	if (vars.count(word))
-		return vars[word];
-	return Default::parserFuncs.at(word)(readParentheses());
+		return new SubfunctionVar(word);
+	return new SubfunctionF1(Default::parserFuncs.at(word), readParentheses());
+}
+
+// MISC
+
+string Parser::jumpWord() {
+	sizt i = id;
+	while (isLetter(func[i]))
+		i++;
+
+	string word = func.substr(id, i - id);
+	id = i;
+	return word;
 }

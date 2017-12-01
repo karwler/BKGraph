@@ -7,6 +7,9 @@
 class Program {
 public:
 	Program();
+	~Program();
+
+	void init(ProgState* initState);
 
 	// view switching
 	void eventClosePopup(Button* but);
@@ -39,6 +42,8 @@ public:
 	void eventDelVariable(Context::Item* item);
 	
 	// settings view
+	void eventSettingResolution(Button* but);
+	void eventSettingViewport(Button* but);
 	void eventSettingFont(Button* but);
 	void eventSettingFullscreen(Button* but);
 	void eventSettingRendererOpen(Button* but);
@@ -48,11 +53,10 @@ public:
 	// other stuff
 	ProgState* getState() { return state.get(); }
 	void setState(ProgState* newState);
+	Parser* getParser() { return &parser; }
 	const Function& getFunction(sizt id) const { return funcs[id]; }
 	const vector<Function>& getFunctions() const { return funcs; }
 	const map<string, double> getVariables() const { return vars; }
-	bool functionValid(sizt fid);
-	double getDotY(sizt fid, double x);
 
 private:
 	uptr<ProgState> state;

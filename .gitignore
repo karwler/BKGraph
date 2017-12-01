@@ -7,9 +7,15 @@ build*
 CMakeCache.txt*
 Makefile*
 *.autosave*
+*.bak*
 *.cmake*
 *.log*
+*.make*
 *.ninja*
+*.old*
+*.o*
+*.obj*
+*.out*
 *.user*
 
 *.cbp*

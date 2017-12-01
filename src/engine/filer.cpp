@@ -10,30 +10,6 @@
 #include <sys/stat.h>
 #endif
 
-// FILE TYPE
-
-FileType operator~(FileType a) {
-	return static_cast<FileType>(~static_cast<uint8>(a));
-}
-FileType operator&(FileType a, FileType b) {
-	return static_cast<FileType>(static_cast<uint8>(a) & static_cast<uint8>(b));
-}
-FileType operator&=(FileType& a, FileType b) {
-	return a = static_cast<FileType>(static_cast<uint8>(a) & static_cast<uint8>(b));
-}
-FileType operator^(FileType a, FileType b) {
-	return static_cast<FileType>(static_cast<uint8>(a) ^ static_cast<uint8>(b));
-}
-FileType operator^=(FileType& a, FileType b) {
-	return a = static_cast<FileType>(static_cast<uint8>(a) ^ static_cast<uint8>(b));
-}
-FileType operator|(FileType a, FileType b) {
-	return static_cast<FileType>(static_cast<uint8>(a) | static_cast<uint8>(b));
-}
-FileType operator|=(FileType& a, FileType b) {
-	return a = static_cast<FileType>(static_cast<uint8>(a) | static_cast<uint8>(b));
-}
-
 // INI LINE
 
 IniLine::IniLine() :
@@ -152,10 +128,11 @@ Settings Filer::loadSettings() {
 			sets.maximized = stob(il.val);
 		else if (il.arg == Default::iniKeywordFullscreen)
 			sets.fullscreen = stob(il.val);
-		else if (il.arg == Default::iniKeywordResolution) {
-			vector<string> elems = getWords(il.val, ' ');
-			sets.resolution = vec2i(stoi(elems[0]), stoi(elems[1]));
-		} else if (il.arg == Default::iniKeywordScrollSpeed)
+		else if (il.arg == Default::iniKeywordResolution)
+			sets.setResolution(il.val);
+		else if (il.arg == Default::iniKeywordViewport)
+			sets.setViewport(il.val);
+		else if (il.arg == Default::iniKeywordScrollSpeed)
 			sets.scrollSpeed = stoi(il.val);
 	}
 	sets.initFont();
@@ -168,17 +145,18 @@ void Filer::saveSettings(const Settings& sets) {
 		IniLine(Default::iniKeywordRenderer, sets.renderer).line(),
 		IniLine(Default::iniKeywordMaximized, btos(sets.maximized)).line(),
 		IniLine(Default::iniKeywordFullscreen, btos(sets.fullscreen)).line(),
-		IniLine(Default::iniKeywordResolution, to_string(sets.resolution.x) + ' ' + to_string(sets.resolution.y)).line(),
+		IniLine(Default::iniKeywordResolution, sets.getResolutionString()).line(),
+		IniLine(Default::iniKeywordViewport, sets.getViewportString()).line(),
 		IniLine(Default::iniKeywordScrollSpeed, to_string(sets.scrollSpeed)).line()
 	};
 	writeTextFile(dirExec + Default::fileSettings, lines);
 }
 
 vector<Function> Filer::loadUsers(map<string, double>& vars) {
-	vector<Function> forms;
+	vector<Function> funcs;
 	vector<string> lines;
 	if (!readTextFile(dirExec + Default::fileUsers, lines, false))	// if file not availibe return empty vector
-		return forms;
+		return funcs;
 
 	// read file's lines
 	for (string& line : lines) {
@@ -187,17 +165,12 @@ vector<Function> Filer::loadUsers(map<string, double>& vars) {
 			continue;
 
 		if (il.arg == Default::iniKeywordVariable) {
-			if (vars.count(il.key) == 0)	// no variables with same name
+			if (!vars.count(il.key))	// no variables with same name
 				vars.insert(make_pair(il.key, stod(il.val)));
-		}  else if (il.arg == Default::iniKeywordFunction) {
-			vector<string> elems = getWords(il.val, ' ');
-			Function frm("", stob(elems[0]), {uint8(stoi(elems[1])), uint8(stoi(elems[2])), uint8(stoi(elems[3])), uint8(stoi(elems[4]))});
-			for (sizt i=5; i!=elems.size(); i++)
-				frm.str += elems[i];
-			forms.push_back(frm);
-		}
+		} else if (il.arg == Default::iniKeywordFunction)
+			funcs.push_back(Function(il.val));
 	}
-	return forms;
+	return funcs;
 }
 
 void Filer::saveUsers(const vector<Function>& forms, const map<string, double>& vars) {
@@ -206,7 +179,7 @@ void Filer::saveUsers(const vector<Function>& forms, const map<string, double>& 
 		lines.push_back(IniLine(Default::iniKeywordVariable, it.first, to_string(it.second)).line());
 
 	for (const Function& it : forms)
-		lines.push_back(IniLine(Default::iniKeywordFunction, btos(it.show) + ' ' + to_string(short(it.color.r)) + ' ' + to_string(short(it.color.g)) + ' ' + to_string(short(it.color.b)) + ' ' + to_string(short(it.color.a)) + ' ' + it.str).line());
+		lines.push_back(IniLine(Default::iniKeywordFunction, btos(it.show) + ' ' + to_string(short(it.color.r)) + ' ' + to_string(short(it.color.g)) + ' ' + to_string(short(it.color.b)) + ' ' + to_string(short(it.color.a)) + ' ' + it.text).line());
 	writeTextFile(dirExec + Default::fileUsers, lines);
 }
 
@@ -259,7 +232,7 @@ vector<string> Filer::listDir(const string& dir, FileType filter, const vector<s
 				entries.push_back(name);
 			else
 				for (const string& ext : extFilter)
-					if (hasExt(name, ext)) {
+					if (hasExtension(name, ext)) {
 						entries.push_back(name);
 						break;
 					}
@@ -287,7 +260,7 @@ vector<string> Filer::listDir(const string& dir, FileType filter, const vector<s
 					entries.push_back(data->d_name);
 				else
 					for (const string& ext : extFilter)
-						if (hasExt(data->d_name, ext)) {
+						if (hasExtension(data->d_name, ext)) {
 							entries.push_back(data->d_name);
 							break;
 						}
@@ -381,7 +354,7 @@ vector<char> Filer::listDrives() {
 	vector<char> letters;
 	DWORD drives = GetLogicalDrives();
 	
-	for (char i=0; i!=26; i++)
+	for (char i=0; i<26; i++)
 		if (drives & (1 << i))
 			letters.push_back('A'+i);
 	return letters;
@@ -413,14 +386,14 @@ string Filer::getDirExec() {
 		delete[] buffer;
 	}
 #endif
-	return path.empty() ? path : getParentPath(path);
+	return path.empty() ? path : parentDir(path);
 }
 
 string Filer::findFont(const string& font) {
 	if (isAbsolute(font)) {	// check fontpath first
 		if (fileType(font) == FTYPE_FILE)
 			return font;
-		return checkDirForFont(getFilename(font), getParentPath(font));
+		return checkDirForFont(filename(font), parentDir(font));
 	}
 
 	for (const string& dir : dirFonts) {	// check global font directories
@@ -433,7 +406,7 @@ string Filer::findFont(const string& font) {
 
 string Filer::checkDirForFont(const string& font, const string& dir) {
 	for (string& it : listDirRecursively(dir)) {
-		string file = findChar(font, '.') ? getFilename(it) : delExt(getFilename(it));
+		string file = findChar(font, '.') ? filename(it) : delExtension(filename(it));
 		if (strcmpCI(file, font))
 			return dir + it;
 	}
@@ -460,58 +433,4 @@ std::istream& Filer::readLine(std::istream& ifs, string& str) {
 		} else
 			str += char(c);
 	}
-}
-
-// PATH FUNCTIONS
-
-bool isAbsolute(const string& path) {
-	return path[0] == dsep || (path[1] == ':' && path[2] == dsep);
-}
-
-string getParentPath(const string& path) {
-	sizt start = (path[path.length()-1] == dsep) ? path.length()-2 : path.length()-1;
-	for (sizt i=start; i!=SIZE_MAX; i--)
-		if (path[i] == dsep)
-			return path.substr(0, i+1);
-	return path;
-}
-
-string getFilename(const string& path) {
-	for (sizt i=path.length()-1; i!=SIZE_MAX; i--)
-		if (path[i] == dsep)
-			return path.substr(i+1);
-	return path;
-}
-
-string getExt(const string& path) {
-	for (sizt i=path.length()-1; i!=SIZE_MAX; i--)
-		if (path[i] == '.')
-			return path.substr(i+1);
-	return "";
-}
-
-bool hasExt(const string& path, const string& ext) {
-	if (path.length() < ext.length())
-		return false;
-	
-	sizt pos = path.length() - ext.length();
-	for (sizt i=0; i!=ext.length(); i++)
-		if (path[pos+i] != ext[i])
-			return false;
-	return true;
-}
-
-string delExt(const string& path) {
-	for (sizt i=path.length()-1; i!=SIZE_MAX; i--)
-		if (path[i] == '.')
-			return path.substr(0, i);
-	return path;
-}
-
-string appendDsep(const string& path) {
-	return (path[path.length()-1] == dsep) ? path : path + dsep;
-}
-
-bool isDriveLetter(const string& path) {
-	return (path.length() == 2 && path[1] == ':') || (path.length() == 3 && path[1] == ':' && path[2] == dsep);
 }

@@ -1,14 +1,6 @@
 #include "engine/windowSys.h"
 #include "engine/filer.h"
 
-// FORMULA
-
-Function::Function(const string& STR, bool SHW, SDL_Color CLR) :
-	show(SHW),
-	color(CLR),
-	str(STR)
-{}
-
 // FONT SET
 
 bool FontSet::init(const string& FILE) {
@@ -62,9 +54,12 @@ int FontSet::textLength(const string& text, int height) {
 
 // SETTINGS
 
-Settings::Settings(bool MAX, bool FSC, const vec2i& RES, const string& FNT, const string& RND, int SSP) :
-	maximized(MAX), fullscreen(FSC),
+Settings::Settings(bool MAX, bool FSC, const vec2i& RES, const vec2d& VPS, const vec2d& VSZ, const string& FNT, const string& RND, int SSP) :
+	maximized(MAX),
+	fullscreen(FSC),
 	resolution(RES),
+	viewPos(VPS),
+	viewSize(VSZ),
 	renderer(RND),
 	scrollSpeed(SSP),
 	font(FNT)
@@ -75,9 +70,38 @@ void Settings::initFont() {
 		font.clear();
 }
 
+string Settings::getResolutionString() const {
+	return to_string(resolution.x) + ' ' + to_string(resolution.y);
+}
+
+
+void Settings::setResolution(const string& line) {
+	vector<vec2t> elems = getWords(line);
+	if (elems.size() >= 1)
+		resolution.x = stoi(line.substr(elems[0].l, elems[0].u));
+	if (elems.size() >= 2)
+		resolution.y = stoi(line.substr(elems[1].l, elems[1].u));
+}
+
+string Settings::getViewportString() const {
+	return to_string(viewPos.x) + ' ' + to_string(viewPos.y) + ' ' + to_string(viewPos.x + viewSize.x) + ' ' + to_string(viewPos.y + viewSize.y);
+}
+
+void Settings::setViewport(const string& line) {
+	vector<vec2t> elems = getWords(line);
+	if (elems.size() >= 1)
+		viewPos.x = stod(line.substr(elems[0].l, elems[0].u));
+	if (elems.size() >= 2)
+		viewPos.y = stod(line.substr(elems[1].l, elems[1].u));
+	if (elems.size() >= 3)
+		viewSize.x = stod(line.substr(elems[2].l, elems[2].u)) - viewPos.x;
+	if (elems.size() >= 4)
+		viewSize.y = stod(line.substr(elems[3].l, elems[3].u)) - viewPos.y;
+}
+
 int Settings::getRenderDriverIndex() {
 	// get index of currently selected renderer
-	for (int i=0; i!=SDL_GetNumRenderDrivers(); i++)
+	for (int i=0; i<SDL_GetNumRenderDrivers(); i++)
 		if (WindowSys::getRendererName(i) == renderer)
 			return i;
 

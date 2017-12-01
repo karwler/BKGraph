@@ -37,7 +37,7 @@ void Layout::onResize() {
 
 	// calculate positions for each widget and set last poss element to end position of the last widget
 	int pos = 0;
-	for (sizt i=0; i!=wgts.size(); i++) {
+	for (sizt i=0; i<wgts.size(); i++) {
 		poss[i] = pos;
 		pos += wgts[i]->getRelSize().usePix ? wgts[i]->getRelSize().pix : wgts[i]->getRelSize().prc * space / total;
 	}
@@ -60,7 +60,7 @@ void Layout::setWidgets(const vector<Widget*>& widgets) {
 	wgts.resize(widgets.size());
 	poss.resize(widgets.size()+1);
 
-	for (sizt i=0; i!=wgts.size(); i++) {
+	for (sizt i=0; i<wgts.size(); i++) {
 		wgts[i] = widgets[i];
 		wgts[i]->setParent(this, i);
 	}
@@ -183,16 +183,16 @@ vec2t ScrollArea::visibleItems() const {
 		return vec2t(1, 0);
 
 	vec2t interval(0, wgts.size()-1);
-	for (sizt i=interval.x; i<=interval.y; i++)
+	for (sizt i=interval.l; i<=interval.u; i++)
 		if (poss[i+1] >= listY) {
-			interval.x = i;
+			interval.l = i;
 			break;
 		}
 		
 	int end = listY + size().y;
-	for (sizt i=interval.x; i<=interval.y; i++)
+	for (sizt i=interval.l; i<=interval.u; i++)
 		if (poss[i+1] >= end) {
-			interval.y = i;
+			interval.u = i;
 			break;
 		}
 	return interval;

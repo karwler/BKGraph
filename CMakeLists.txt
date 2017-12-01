@@ -22,6 +22,8 @@ set(SRC_FILES
 	"src/prog/progs.cpp"
 	"src/prog/progs.h"
 	"src/utils/defaults.h"
+	"src/utils/functions.cpp"
+	"src/utils/functions.h"
 	"src/utils/parser.cpp"
 	"src/utils/parser.h"
 	"src/utils/settings.cpp"

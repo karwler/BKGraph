@@ -28,7 +28,7 @@ void Context::onClick(const vec2i& mPos, uint8 mBut) {
 void Context::setItems(const vector<Item>& newItems, int sizeX) {
 	size.x = sizeX;
 	items.resize(newItems.size());
-	for (sizt i=0; i!=items.size(); i++) {
+	for (sizt i=0; i<items.size(); i++) {
 		items[i] = newItems[i];
 		int len = World::winSys()->getFontSet().textLength(items[i].text, Default::itemHeight) + Default::textOffset*2;
 		if (len > size.x)

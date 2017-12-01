@@ -2,15 +2,6 @@
 
 #include "defaults.h"
 
-// I guess this is kind of part of the settings
-struct Function {
-	Function(const string& STR="", bool SHW=true, SDL_Color CLR=Default::colorGraph);
-
-	bool show;
-	SDL_Color color;
-	string str;
-};
-
 // loads different font sizes from one family
 class FontSet {
 public:
@@ -30,10 +21,11 @@ private:
 
 // settings I guess?
 struct Settings {
-	Settings(bool MAX=Default::maximized, bool FSC=Default::fullscreen, const vec2i& RES=Default::resolution, const string& FNT=Default::font, const string& RND="", int SSP=Default::scrollSpeed);
+	Settings(bool MAX=Default::maximized, bool FSC=Default::fullscreen, const vec2i& RES=Default::resolution, const vec2d& VPS=Default::viewportPosition, const vec2d& VSZ=Default::viewportSize, const string& FNT=Default::font, const string& RND="", int SSP=Default::scrollSpeed);
 
 	bool maximized, fullscreen;
 	vec2i resolution;
+	vec2d viewPos, viewSize;
 	string renderer;
 	int scrollSpeed;
 
@@ -41,5 +33,9 @@ struct Settings {
 	FontSet fontSet;
 
 	void initFont();
+	string getResolutionString() const;
+	void setResolution(const string& line);
+	string getViewportString() const;
+	void setViewport(const string& line);
 	int getRenderDriverIndex();
 };

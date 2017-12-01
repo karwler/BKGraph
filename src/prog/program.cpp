@@ -9,6 +9,18 @@ Program::Program()
 	parser.updateVars(vars);
 }
 
+Program::~Program() {
+	for (Function& it : funcs)
+		it.clear();
+}
+
+void Program::init(ProgState* initState) {
+	for (Function& it : funcs)
+		it.setFunc();
+
+	setState(initState);
+}
+
 void Program::eventClosePopup(Button* but) {
 	World::scene()->popup.reset();
 }
@@ -48,12 +60,12 @@ void Program::eventGraphFunctionChanged(Button* but) {
 	string str = ledt->getText();
 	if (str.empty())
 		return;
-	if (!parser.check(str))
-		World::scene()->popup.reset(state->createPopupMessage("Invalid Function", vec2<Size>(300, 100)));
-	
+
 	sizt id = static_cast<ProgFuncs*>(state.get())->getFormID(ledt);
-	funcs[id].str = str;
-	ledt->setText(str);
+	funcs[id].text = str;
+	if (!funcs[id].setFunc())
+		World::scene()->popup.reset(state->createPopupMessage("Invalid Function", vec2<Size>(300, 100)));
+	ledt->setText(funcs[id].text);
 }
 
 void Program::eventOpenContextFunction(Button* but) {
@@ -71,31 +83,32 @@ void Program::eventAddFunction(Context::Item* item) {
 
 void Program::eventDelFunction(Context::Item* item) {
 	sizt id = static_cast<ProgFuncs*>(state.get())->getFormID(World::scene()->getContext()->getWidget());
+	funcs[id].clear();
 	funcs.erase(funcs.begin()+id);
 
 	setState(new ProgFuncs);
 }
 
 void Program::eventGraphColorPickRed(Button* but) {
-	static_cast<ColorBox*>(but->getParent()->widget(0))->color.r = static_cast<Slider*>(but)->getVal();
+	static_cast<ColorBox*>(World::scene()->popup->getWidget(0))->color.r = static_cast<Slider*>(but)->getVal();
 }
 
 void Program::eventGraphColorPickGreen(Button* but) {
-	static_cast<ColorBox*>(but->getParent()->widget(0))->color.g = static_cast<Slider*>(but)->getVal();
+	static_cast<ColorBox*>(World::scene()->popup->getWidget(0))->color.g = static_cast<Slider*>(but)->getVal();
 }
 
 void Program::eventGraphColorPickBlue(Button* but) {
-	static_cast<ColorBox*>(but->getParent()->widget(0))->color.b = static_cast<Slider*>(but)->getVal();
+	static_cast<ColorBox*>(World::scene()->popup->getWidget(0))->color.b = static_cast<Slider*>(but)->getVal();
 }
 
 void Program::eventGraphColorPickAlpha(Button* but) {
-	static_cast<ColorBox*>(but->getParent()->widget(0))->color.a = static_cast<Slider*>(but)->getVal();
+	static_cast<ColorBox*>(World::scene()->popup->getWidget(0))->color.a = static_cast<Slider*>(but)->getVal();
 }
 
 void Program::eventGraphColorPickConfirm(Button* but) {
 	ProgFuncs* fstate = static_cast<ProgFuncs*>(state.get());
 	sizt id = static_cast<ProgFuncs*>(state.get())->getFormID(fstate->lastClicked);
-	funcs[id].color = static_cast<ColorBox*>(World::scene()->popup->widget(0))->color;
+	funcs[id].color = static_cast<ColorBox*>(World::scene()->popup->getWidget(0))->color;
 	setState(new ProgFuncs);
 }
 
@@ -151,6 +164,14 @@ void Program::eventDelVariable(Context::Item* item) {
 	setState(new ProgVars);
 }
 
+void Program::eventSettingResolution(Button* but) {
+	World::winSys()->setResolution(static_cast<LineEdit*>(but)->getText());
+}
+
+void Program::eventSettingViewport(Button* but) {
+	World::winSys()->setViewport(static_cast<LineEdit*>(but)->getText());
+}
+
 void Program::eventSettingFont(Button* but) {
 	World::winSys()->setFont(static_cast<LineEdit*>(but)->getText());
 }
@@ -162,7 +183,7 @@ void Program::eventSettingFullscreen(Button* but) {
 void Program::eventSettingRendererOpen(Button* but) {
 	vector<string> rnds = WindowSys::getAvailibleRenderers();
 	vector<Context::Item> items(rnds.size());
-	for (sizt i=0; i!=items.size(); i++)
+	for (sizt i=0; i<items.size(); i++)
 		items[i] = Context::Item(rnds[i], &Program::eventSettingRendererPick);
 	World::scene()->setContext(new Context(but, items, but->position(), but->size()));
 }
@@ -180,14 +201,6 @@ void Program::setState(ProgState* newState) {
 	state.reset(newState);
 	World::scene()->clearScene();
 	World::scene()->layout.reset(state->createLayout());
-}
-
-bool Program::functionValid(sizt fid) {
-	return parser.check(funcs[fid].str);
-}
-
-double Program::getDotY(sizt fid, double x) {
-	return parser.solve(funcs[fid].str, x);
 }
 
 bool Program::wordValid(const string& str) {

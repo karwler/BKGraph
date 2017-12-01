@@ -24,10 +24,10 @@ int WindowSys::start() {
 		cerr << str << endl;
 		return -1;
 	} catch (...) {
-		cerr << "unknown error" << endl;
+		cerr << "unknown initialization error" << endl;
 		return -2;
 	}
-	program->setState(new ProgFuncs);
+	program->init(new ProgFuncs);
 	run = true;
 
 	// the loop :O
@@ -50,6 +50,7 @@ int WindowSys::start() {
 	program.reset();
 	scene.reset();
 	destroyWindow();
+
 	TTF_Quit();
 	IMG_Quit();
 	SDL_Quit();
@@ -65,7 +66,7 @@ void WindowSys::createWindow() {
 		flags |= SDL_WINDOW_MAXIMIZED;
 	if (sets.fullscreen)
 		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-
+	
 	window = SDL_CreateWindow(Default::windowTitle, Default::windowPos.x, Default::windowPos.y, sets.resolution.x, sets.resolution.y, flags);
 	if (!window)
 		throw "couldn't create window\n" + string(SDL_GetError());
@@ -146,9 +147,23 @@ string WindowSys::getRendererName(int id) {
 
 vector<string> WindowSys::getAvailibleRenderers() {
 	vector<string> renderers(SDL_GetNumRenderDrivers());
-	for (int i=0; i!=renderers.size(); i++)
+	for (int i=0; i<renderers.size(); i++)
 		renderers[i] = getRendererName(i);
 	return renderers;
+}
+
+void WindowSys::setResolution(const vec2i& res) {
+	sets.resolution = res;
+	SDL_SetWindowSize(window, res.x, res.y);
+}
+
+void WindowSys::setResolution(const string& line) {
+	sets.setResolution(line);
+	SDL_SetWindowSize(window, sets.resolution.x, sets.resolution.y);
+}
+
+void WindowSys::setViewport(const string& line) {
+	sets.setViewport(line);
 }
 
 void WindowSys::setRenderer(const string& name) {

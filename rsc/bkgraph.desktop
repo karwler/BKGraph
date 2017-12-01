@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Encoding=UTF-8
+Name=BKGraph
+Exec=BKGraph
+Icon=icon.png
+Comment=View funciton graphs
+GenericName=Function Graph Viewer
+Keywords=Manga;Music;Reader
+Categories=Utility
+Terminal=false
+StartupNotify=true

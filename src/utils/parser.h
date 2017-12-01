@@ -1,6 +1,7 @@
 #pragma once
 
-#include "utils/utils.h"
+#include "functions.h"
+#include "utils.h"
 
 // for checking the syntax of formulas and solving them
 class Parser {
@@ -9,20 +10,20 @@ public:
 	void updateVar(const string& key, double val) { vars[key] = val; }
 	void updateAddVar(const pair<string, double>& var) { vars.insert(var); }
 	void updateDelVar(const string& key) { vars.erase(key); }
-	bool isVar(const string& word) const { return vars.count(word) != 0; }
+	bool isVar(const string& word) const { return vars.count(word); }
+	double getVar(const string& key) const { return vars.at(key); }
+	void setX(double x) { vars["x"] = x; }
 
-	bool check(string& function);
-	double solve(string& function, double x);
+	Subfunction* createTree(const string& function);
 
 private:
 	umap<string, double> vars;	// merge of Default::parserConsts, Program::vars and x
-	string* func;	// pointer to the function
+	string func;	// pointer to the function
 	sizt id;		// for iterating through form
 	int pcnt;		// for counting opening and closing parentheses
 
-	char getc() { return (*func)[id]; }
-	char geti(sizt i) { return (*func)[i]; }
-	sizt findWordEnd();
+	void formatIgnores();
+	void formatMultiplication();
 
 	void checkFirst();
 	void checkNumber();
@@ -30,14 +31,17 @@ private:
 	void checkVar();
 	void checkFunc();
 	void checkOperator();
+	void checkFactorial();
 	void checkParOpen();
 	void checkParClose();
 	
-	double readAddSub();
-	double readMulDiv();
-	double readPower();
-	double readFirst();
-	double readParentheses();
-	double readNumber();
-	double readWord();
+	Subfunction* readAddSub();
+	Subfunction* readMulDiv();
+	Subfunction* readPower();
+	Subfunction* readFirst();
+	Subfunction* readParentheses();
+	Subfunction* readNumber();
+	Subfunction* readWord();
+
+	string jumpWord();
 };
