@@ -196,6 +196,7 @@ Subfunction* Parser::readFirst() {
 		mf1ptr mfp = (func[id++] == '-') ? dNeg : dFac;
 		return new SubfunctionF1(mfp, readFirst());
 	}
+	return nullptr;
 }
 
 Subfunction* Parser::readParentheses() {

@@ -3,7 +3,7 @@
 #include "functions.h"
 #include "utils.h"
 
-// for checking the syntax of formulas and solving them
+// for checking the syntax of functinos and solving them
 class Parser {
 public:
 	void updateVars(const map<string, double>& pvars);
@@ -19,7 +19,7 @@ public:
 private:
 	umap<string, double> vars;	// merge of Default::parserConsts, Program::vars and x
 	string func;	// pointer to the function
-	sizt id;		// for iterating through form
+	sizt id;		// for iterating through func
 	int pcnt;		// for counting opening and closing parentheses
 
 	void formatIgnores();

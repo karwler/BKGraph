@@ -26,7 +26,7 @@ public:
 
 	const Graph& getGraph(sizt id) { return graphs[id]; }
 	const vector<Graph> getGraphs() const { return graphs; }
-	void setGraphs(const vector<Function>& formulas);
+	void setGraphs(const vector<Function>& funcs);
 
 private:
 	vector<Graph> graphs;

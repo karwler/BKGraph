@@ -3,6 +3,20 @@
 #include <cmath>
 
 template <typename T>
+struct vec2;
+
+template <typename T>
+T dot(const vec2<T>& a, const vec2<T>& b);
+template <typename T>
+T cross(const vec2<T>& a, const vec2<T>& b);
+template <typename T>
+vec2<T> reflect(const vec2<T>& vec, vec2<T> nrm);
+template <typename T>
+vec2<T> rotate(const vec2<T>& vec, const T& ang);
+template <typename T>
+unsigned char intersect(vec2<T>& in, vec2<T>& im, const vec2<T>& ap, const vec2<T>& av, const vec2<T>& bp, const vec2<T>& bv);
+
+template <typename T>
 struct vec2 {
 	vec2(const T& N=T(0)) :
 		x(N), y(N)

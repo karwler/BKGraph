@@ -6,6 +6,8 @@
 // for handling program state specific things that occur in all states
 class ProgState {
 public:
+	virtual ~ProgState() {}
+
 	virtual void eventKeypress(const SDL_Keysym& key);
 	virtual void eventBack() = 0;
 	virtual void eventContextBlank() {}
@@ -23,11 +25,11 @@ public:
 	
 	virtual Layout* createLayout();
 
-	sizt getFormID(Widget* wgt) const { return interacts.at(wgt); }
+	sizt getFuncID(Widget* wgt) const { return interacts.at(wgt); }
 
 	Widget* lastClicked;	// for keeping track of stuff between jumping through events
 private:
-	map<Widget*, sizt> interacts;	// assigns widget reference to index of corresponding element in Program's forms
+	map<Widget*, sizt> interacts;	// assigns widget reference to index of corresponding element in Program's funcs
 };
 
 class ProgVars : public ProgState {

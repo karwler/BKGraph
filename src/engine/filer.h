@@ -44,8 +44,8 @@ class Filer {
 public:
 	static Settings loadSettings();	// read settings file
 	static void saveSettings(const Settings& sets);	// write settings file
-	static vector<Function> loadUsers(map<string, double>& vars);	// read formulas and variables from file
-	static void saveUsers(const vector<Function>& forms, const map<string, double>& vars);	// write formulas and variables to file
+	static vector<Function> loadUsers(map<string, double>& vars);	// read functinos and variables from file
+	static void saveUsers(const vector<Function>& funcs, const map<string, double>& vars);	// write functions and variables to file
 
 	static bool readTextFile(const string& file, vector<string>& lines, bool printMessage=true);	// returns true on success
 	static bool writeTextFile(const string& file, const vector<string>& lines);	// returns true on success

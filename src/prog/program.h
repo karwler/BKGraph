@@ -13,7 +13,7 @@ public:
 
 	// view switching
 	void eventClosePopup(Button* but);
-	void eventOpenForms(Button* but);
+	void eventOpenFuncs(Button* but);
 	void eventOpenVars(Button* but);
 	void eventOpenGraph(Button* but);
 	void eventOpenSettings(Button* but);

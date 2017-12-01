@@ -139,7 +139,7 @@ void ProgVars::eventContextBlank() {
 
 Layout* ProgVars::createLayout() {
 	vector<Widget*> wgts = {
-		new Label("Functions", &Program::eventOpenForms, nullptr, 130),
+		new Label("Functions", &Program::eventOpenFuncs, nullptr, 130),
 		new Widget(10),
 		new Label("Graph", &Program::eventOpenGraph, nullptr, 90),
 		new Widget(10),
@@ -191,7 +191,7 @@ void ProgGraph::eventBack() {
 
 Layout* ProgGraph::createLayout() {
 	vector<Widget*> wgts ={
-		new Label("Functions", &Program::eventOpenForms, nullptr, 130),
+		new Label("Functions", &Program::eventOpenFuncs, nullptr, 130),
 		new Widget(10),
 		new Label("Variables", &Program::eventOpenVars, nullptr, 120),
 		new Widget(10),
@@ -223,7 +223,7 @@ void ProgSettings::eventBack() {
 
 Layout* ProgSettings::createLayout() {
 	vector<Widget*> wgts = {
-		new Label("Functions", &Program::eventOpenForms, nullptr, 130),
+		new Label("Functions", &Program::eventOpenFuncs, nullptr, 130),
 		new Widget(10),
 		new Label("Variables", &Program::eventOpenVars, nullptr, 120),
 		new Widget(10),

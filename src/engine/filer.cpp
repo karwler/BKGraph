@@ -173,12 +173,12 @@ vector<Function> Filer::loadUsers(map<string, double>& vars) {
 	return funcs;
 }
 
-void Filer::saveUsers(const vector<Function>& forms, const map<string, double>& vars) {
+void Filer::saveUsers(const vector<Function>& funcs, const map<string, double>& vars) {
 	vector<string> lines;
 	for (const pair<string, double>& it : vars)
 		lines.push_back(IniLine(Default::iniKeywordVariable, it.first, to_string(it.second)).line());
 
-	for (const Function& it : forms)
+	for (const Function& it : funcs)
 		lines.push_back(IniLine(Default::iniKeywordFunction, btos(it.show) + ' ' + to_string(short(it.color.r)) + ' ' + to_string(short(it.color.g)) + ' ' + to_string(short(it.color.b)) + ' ' + to_string(short(it.color.a)) + ' ' + it.text).line());
 	writeTextFile(dirExec + Default::fileUsers, lines);
 }

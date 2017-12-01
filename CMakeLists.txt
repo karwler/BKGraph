@@ -1,7 +1,6 @@
 # project properties
 cmake_minimum_required(VERSION 3.1.3)
 project(BKGraph LANGUAGES CXX)
-set(CXX_STANDARD 11)
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CONFIGURATION_TYPES "Debug" "Release")
 
@@ -71,6 +70,8 @@ endif()
 
 # set main target
 add_executable(BKGraph ${SRC_FILES})
+target_compile_features(BKGraph PUBLIC cxx_aggregate_default_initializers cxx_alias_templates cxx_alignas cxx_alignof cxx_attributes cxx_constexpr cxx_contextual_conversions cxx_decltype cxx_default_function_template_args cxx_defaulted_functions cxx_defaulted_move_initializers cxx_delegating_constructors cxx_deleted_functions cxx_enum_forward_declarations cxx_explicit_conversions cxx_extended_friend_declarations cxx_extern_templates cxx_final cxx_func_identifier cxx_generalized_initializers cxx_inheriting_constructors cxx_inline_namespaces cxx_local_type_template_args cxx_long_long_type cxx_noexcept cxx_nonstatic_member_init cxx_nullptr cxx_override cxx_range_for cxx_raw_string_literals cxx_reference_qualified_functions cxx_right_angle_brackets cxx_rvalue_references cxx_sizeof_member cxx_strong_enums cxx_unicode_literals cxx_uniform_initialization cxx_unrestricted_unions cxx_user_literals cxx_variadic_macros cxx_variadic_templates cxx_template_template_parameters)
+
 # uncomment the following line for 32 bit build (unless the compiler doesn't use the "-m32" option)
 #set_target_properties(BKGraph PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
 

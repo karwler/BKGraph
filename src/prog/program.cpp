@@ -25,7 +25,7 @@ void Program::eventClosePopup(Button* but) {
 	World::scene()->popup.reset();
 }
 
-void Program::eventOpenForms(Button* but) {
+void Program::eventOpenFuncs(Button* but) {
 	setState(new ProgFuncs);
 }
 
@@ -46,7 +46,7 @@ void Program::eventExit(Button* but) {
 }
 
 void Program::eventSwitchGraphShow(Button* but) {
-	sizt id = static_cast<ProgFuncs*>(state.get())->getFormID(but);
+	sizt id = static_cast<ProgFuncs*>(state.get())->getFuncID(but);
 	funcs[id].show = static_cast<CheckBox*>(but)->on;
 }
 
@@ -61,7 +61,7 @@ void Program::eventGraphFunctionChanged(Button* but) {
 	if (str.empty())
 		return;
 
-	sizt id = static_cast<ProgFuncs*>(state.get())->getFormID(ledt);
+	sizt id = static_cast<ProgFuncs*>(state.get())->getFuncID(ledt);
 	funcs[id].text = str;
 	if (!funcs[id].setFunc())
 		World::scene()->popup.reset(state->createPopupMessage("Invalid Function", vec2<Size>(300, 100)));
@@ -82,7 +82,7 @@ void Program::eventAddFunction(Context::Item* item) {
 }
 
 void Program::eventDelFunction(Context::Item* item) {
-	sizt id = static_cast<ProgFuncs*>(state.get())->getFormID(World::scene()->getContext()->getWidget());
+	sizt id = static_cast<ProgFuncs*>(state.get())->getFuncID(World::scene()->getContext()->getWidget());
 	funcs[id].clear();
 	funcs.erase(funcs.begin()+id);
 
@@ -107,7 +107,7 @@ void Program::eventGraphColorPickAlpha(Button* but) {
 
 void Program::eventGraphColorPickConfirm(Button* but) {
 	ProgFuncs* fstate = static_cast<ProgFuncs*>(state.get());
-	sizt id = static_cast<ProgFuncs*>(state.get())->getFormID(fstate->lastClicked);
+	sizt id = static_cast<ProgFuncs*>(state.get())->getFuncID(fstate->lastClicked);
 	funcs[id].color = static_cast<ColorBox*>(World::scene()->popup->getWidget(0))->color;
 	setState(new ProgFuncs);
 }

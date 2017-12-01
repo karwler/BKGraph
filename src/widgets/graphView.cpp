@@ -63,9 +63,9 @@ void GraphView::onResize() {
 	updateDots();
 }
 
-void GraphView::setGraphs(const vector<Function>& formulas) {
-	for (sizt i=0; i<formulas.size(); i++)
-		if (formulas[i].visible())
+void GraphView::setGraphs(const vector<Function>& funcs) {
+	for (sizt i=0; i<funcs.size(); i++)
+		if (funcs[i].visible())
 			graphs.push_back(Graph(i));
 	onResize();
 }

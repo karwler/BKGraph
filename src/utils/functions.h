@@ -4,6 +4,8 @@
 
 class Subfunction {
 public:
+	virtual ~Subfunction() {}
+
 	virtual double solve() const = 0;
 };
 
