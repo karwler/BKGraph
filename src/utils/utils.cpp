@@ -27,14 +27,15 @@ bool findChar(const string& str, char c, sizt& id) {
 
 vector<vec2t> getWords(const string& line, char spacer) {
 	sizt i = 0;
-	skipSpacers(line, i, spacer);
+	while (line[i] == spacer)
+		i++;
 
 	sizt start = i;
 	vector<vec2t> words;
 	while (i < line.length()) {
 		if (line[i] == spacer) {
 			words.push_back(vec2t(start, i-start));
-			skipSpacers(line, i, spacer);
+			while (line[++i] == spacer);
 			start = i;
 		} else
 			i++;
@@ -45,45 +46,154 @@ vector<vec2t> getWords(const string& line, char spacer) {
 }
 
 sizt jumpToWordStart(const string& str, sizt i, char splitter) {
-	if (str[i] != splitter && i != 0 && str[i-1] == splitter)	// skip if first letter of word
+	if (str[i] != splitter && i > 0 && str[i-1] == splitter)	// skip if first letter of word
 		i--;
-	while (str[i] == splitter && i != 0)	// skip first spaces
+	while (str[i] == splitter && i > 0)	// skip first spaces
 		i--;
-	while (str[i] != splitter && i != 0)	// skip word
+	while (str[i] != splitter && i > 0)	// skip word
 		i--;
 	return (i == 0) ? i : i+1;	// correct position if necessary
 }
 
 sizt jumpToWordEnd(const string& str, sizt i, char splitter) {
-	while (str[i] == splitter && i != str.length())	// skip first spaces
+	while (str[i] == splitter && i < str.length())	// skip first spaces
 		i++;
-	while (str[i] != splitter && i != str.length())	// skip word
+	while (str[i] != splitter && i < str.length())	// skip word
 		i++;
 	return i;
 }
 
 void cleanString(string& str, TextType type) {
-	if (type == TextType::integer)
-		cleanIntString(str);
-	else if (type == TextType::floating)
-		cleanFloatString(str);
+	if (type == TextType::sInteger)
+		cleanSIntString(str);
+	else if (type == TextType::sIntegerSpaced)
+		cleanSIntSpacedString(str);
+	else if (type == TextType::uInteger)
+		cleanUIntString(str);
+	else if (type == TextType::uIntegerSpaced)
+		cleanUIntSpacedString(str);
+	else if (type == TextType::sFloating)
+		cleanSFloatString(str);
+	else if (type == TextType::sFloatingSpaced)
+		cleanSFloatSpacedString(str);
+	else if (type == TextType::uFloating)
+		cleanUFloatString(str);
+	else if (type == TextType::uFloatingSpaced)
+		cleanUFloatSpacedString(str);
+	else if (type == TextType::function)
+		cleanFunctionString(str);
 }
 
-void cleanIntString(string& str) {
-	for (sizt i=0; i<str.length(); i++)
-		if (!isDigit(str[i]) && str[i] != ' ')
-			str.erase(i--);
+void cleanSIntString(string& str) {
+	cleanUIntString(str, (str[0] == '-') ? 1 : 0);
 }
 
-void cleanFloatString(string& str) {
+void cleanSIntSpacedString(string& str, sizt i) {
+	while (str[i] == ' ')
+		i++;
+	if (str[i] == '-')
+		i++;
+
+	while (i < str.length()) {
+		if (isDigit(str[i]))
+			i++;
+		else if (str[i] == ' ') {
+			cleanSIntSpacedString(str, i+1);
+			break;
+		} else
+			str.erase(i);
+	}
+}
+
+void cleanUIntString(string& str, sizt i) {
+	while (i < str.length()) {
+		if (isDigit(str[i]))
+			i++;
+		else
+			str.erase(i);
+	}
+}
+
+void cleanUIntSpacedString(string& str) {
+	sizt i = 0;
+	while (str[i] == ' ')
+		i++;
+
+	while (i < str.length()) {
+		if (isDigit(str[i]))
+			i++;
+		else if (str[i] == ' ')
+			while (str[++i] == ' ');
+		else
+			str.erase(i);
+	}
+}
+
+void cleanSFloatString(string& str) {
+	cleanUFloatString(str, (str[0] == '-') ? 1 : 0);
+}
+
+void cleanSFloatSpacedString(string& str, sizt i) {
+	while (str[i] == ' ')
+		i++;
+	if (str[i] == '-')
+		i++;
+
 	bool foundDot = false;
-	for (sizt i=0; i<str.length(); i++)
-		if (!isDigit(str[i]) && str[i] != ' ') {
-			if (str[i] == '.' && !foundDot)
-				foundDot = true;
-			else
-				str.erase(i--);
-		}
+	while (i < str.length()) {
+		if (isDigit(str[i]))
+			i++;
+		else if (str[i] == '.' && !foundDot) {
+			foundDot = true;
+			i++;
+		} else if (str[i] == ' ') {
+			cleanSFloatSpacedString(str, i+1);
+			break;
+		} else
+			str.erase(i);
+	}
+}
+
+void cleanUFloatString(string& str, sizt i) {
+	bool foundDot = false;
+	while (i < str.length()) {
+		if (isDigit(str[i]))
+			i++;
+		else if (str[i] == '.' && !foundDot) {
+			foundDot = true;
+			i++;
+		} else
+			str.erase(i);
+	}
+}
+
+void cleanUFloatSpacedString(string& str) {
+	sizt i = 0;
+	while (str[i] == ' ')
+		i++;
+
+	bool foundDot = false;
+	while (i < str.length()) {
+		if (isDigit(str[i]))
+			i++;
+		else if (str[i] == '.' && !foundDot) {
+			foundDot = true;
+			i++;
+		} else if (str[i] == ' ') {
+			while (str[++i] == ' ');
+			foundDot = false;
+		} else
+			str.erase(i);
+	}
+}
+
+void cleanFunctionString(string& str) {
+	for (sizt i=0; i<str.length();) {
+		if (isNumber(str[i]) || isLetter(str[i]) || isOperator(str[i]) || str[i] == '(' || str[i] == ')')
+			i++;
+		else
+			str.erase(i);
+	}
 }
 
 bool isAbsolute(const string& path) {
@@ -151,9 +261,12 @@ wstring stow(const string& str) {
 }
 
 SDL_Rect cropRect(SDL_Rect& rect, const SDL_Rect& frame) {
+	if (rect.w <= 0 || rect.h <= 0 || frame.w <= 0 || frame.h <= 0)	// idfk
+		return {0, 0, 0, 0};
+
 	// ends of each rect and frame
-	vec2i rend(rect.x + rect.w, rect.y + rect.h);
-	vec2i fend(frame.x + frame.w, frame.y + frame.h);
+	vec2i rend = rectEnd(rect);
+	vec2i fend = rectEnd(frame);
 	if (rect.x > fend.x || rect.y > fend.y || rend.x < frame.x || rend.y < frame.y) {	// if rect is out of frame
 		rect = {0, 0, 0, 0};
 		return rect;
@@ -185,32 +298,34 @@ SDL_Rect cropRect(SDL_Rect& rect, const SDL_Rect& frame) {
 	return crop;
 }
 
-SDL_Rect overlapRect(const SDL_Rect& a, const SDL_Rect& b)  {
+SDL_Rect overlapRect(SDL_Rect rect, const SDL_Rect& frame)  {
+	if (rect.w <= 0 || rect.h <= 0 || frame.w <= 0 || frame.h <= 0)		// idfk
+		return rect;
+
 	// ends of both rects
-	vec2i ae(a.x + a.w, a.y + a.h);
-	vec2i be(b.x + b.w, b.y + b.h);
-	if (a.x > be.x || a.y > be.y || ae.x < b.x || ae.y < b.y)	// if they don't overlap
+	vec2i rend = rectEnd(rect);
+	vec2i fend = rectEnd(frame);
+	if (rect.x > fend.x || rect.y > fend.y || rend.x < frame.x || rend.y < frame.y)	// if they don't overlap
 		return {0, 0, 0, 0};
 
 	// crop rect if it's boundaries are out of frame
-	SDL_Rect r = a;
-	if (a.x < b.x) {	// left
-		r.x = b.x;
-		r.w -= b.x - a.x;
+	if (rect.x < frame.x) {	// left
+		rect.w -= frame.x - rect.x;
+		rect.x = frame.x;
 	}
-	if (ae.x > be.x)	// right
-		r.w = be.x - r.x;
-	if (a.y < b.y) {	// top
-		r.y = b.y;
-		r.h -= b.y - a.y;
+	if (rend.x > fend.x)	// right
+		rect.w -= rend.x - fend.x;
+	if (rect.y < frame.y) {	// top
+		rect.h -= frame.y - rect.y;
+		rect.y = frame.y;
 	}
-	if (ae.y > be.y)	// bottom
-		r.h = be.y - r.y;
-	return r;
+	if (rend.y > fend.y)	// bottom
+		rect.h -= rend.y - fend.y;
+	return rect;
 }
 
 bool cropLine(vec2i& pos, vec2i& end, const SDL_Rect& frame) {
-	vec2i fend(frame.x + frame.w, frame.y + frame.h);
+	vec2i fend = rectEnd(frame);
 	vec2f dots[5] = {
 		vec2f(frame.x, frame.y),
 		vec2f(fend.x, frame.y),

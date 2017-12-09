@@ -40,6 +40,9 @@ public:
 	void eventOpenContextVariable(Button* but);
 	void eventAddVariable(Context::Item* item);
 	void eventDelVariable(Context::Item* item);
+
+	// graph view
+	void eventGetYConfirm(Button* but);
 	
 	// settings view
 	void eventSettingResolution(Button* but);

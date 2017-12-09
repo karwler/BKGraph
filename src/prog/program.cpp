@@ -22,7 +22,7 @@ void Program::init(ProgState* initState) {
 }
 
 void Program::eventClosePopup(Button* but) {
-	World::scene()->popup.reset();
+	World::scene()->setPopup(nullptr);
 }
 
 void Program::eventOpenFuncs(Button* but) {
@@ -51,8 +51,7 @@ void Program::eventSwitchGraphShow(Button* but) {
 }
 
 void Program::eventOpenGraphColorPick(Button* but) {
-	static_cast<ProgFuncs*>(state.get())->lastClicked = but;
-	World::scene()->popup.reset(state->createPopupColorPick(static_cast<ColorBox*>(but)->color));
+	World::scene()->setPopup(ProgState::createPopupColorPick(static_cast<ColorBox*>(but)->color, but));
 }
 
 void Program::eventGraphFunctionChanged(Button* but) {
@@ -64,7 +63,7 @@ void Program::eventGraphFunctionChanged(Button* but) {
 	sizt id = static_cast<ProgFuncs*>(state.get())->getFuncID(ledt);
 	funcs[id].text = str;
 	if (!funcs[id].setFunc())
-		World::scene()->popup.reset(state->createPopupMessage("Invalid Function", vec2<Size>(300, 100)));
+		World::scene()->setPopup(ProgState::createPopupMessage("Invalid Function", vec2<Size>(300, 100)));
 	ledt->setText(funcs[id].text);
 }
 
@@ -90,25 +89,25 @@ void Program::eventDelFunction(Context::Item* item) {
 }
 
 void Program::eventGraphColorPickRed(Button* but) {
-	static_cast<ColorBox*>(World::scene()->popup->getWidget(0))->color.r = static_cast<Slider*>(but)->getVal();
+	static_cast<ColorBox*>(World::scene()->getPopup()->getWidget(0))->color.r = static_cast<Slider*>(but)->getVal();
 }
 
 void Program::eventGraphColorPickGreen(Button* but) {
-	static_cast<ColorBox*>(World::scene()->popup->getWidget(0))->color.g = static_cast<Slider*>(but)->getVal();
+	static_cast<ColorBox*>(World::scene()->getPopup()->getWidget(0))->color.g = static_cast<Slider*>(but)->getVal();
 }
 
 void Program::eventGraphColorPickBlue(Button* but) {
-	static_cast<ColorBox*>(World::scene()->popup->getWidget(0))->color.b = static_cast<Slider*>(but)->getVal();
+	static_cast<ColorBox*>(World::scene()->getPopup()->getWidget(0))->color.b = static_cast<Slider*>(but)->getVal();
 }
 
 void Program::eventGraphColorPickAlpha(Button* but) {
-	static_cast<ColorBox*>(World::scene()->popup->getWidget(0))->color.a = static_cast<Slider*>(but)->getVal();
+	static_cast<ColorBox*>(World::scene()->getPopup()->getWidget(0))->color.a = static_cast<Slider*>(but)->getVal();
 }
 
 void Program::eventGraphColorPickConfirm(Button* but) {
-	ProgFuncs* fstate = static_cast<ProgFuncs*>(state.get());
-	sizt id = static_cast<ProgFuncs*>(state.get())->getFuncID(fstate->lastClicked);
-	funcs[id].color = static_cast<ColorBox*>(World::scene()->popup->getWidget(0))->color;
+	sizt id = static_cast<ProgFuncs*>(state.get())->getFuncID(static_cast<Widget*>(but->data));	// get fucntion id through data from ok button which is a pointer to the ColorBox that was clicked to open the color pick popup
+
+	funcs[id].color = static_cast<ColorBox*>(World::scene()->getPopup()->getWidget(0))->color;
 	setState(new ProgFuncs);
 }
 
@@ -119,7 +118,7 @@ void Program::eventVarRename(Button* but) {
 		vars.erase(ledt->getOldText());
 		parser.updateVars(vars);
 	} else
-		World::scene()->popup.reset(state->createPopupMessage("Invalid Name", vec2<Size>(300, 100)));
+		World::scene()->setPopup(ProgState::createPopupMessage("Invalid Name", vec2<Size>(300, 100)));
 }
 
 void Program::eventVarRevalue(Button* but) {
@@ -164,6 +163,14 @@ void Program::eventDelVariable(Context::Item* item) {
 	setState(new ProgVars);
 }
 
+void Program::eventGetYConfirm(Button* but) {
+	sizt fid = static_cast<ProgGraph*>(state.get())->getGraphView()->getLastClickedGraph()->fid;
+	const string& xstr = static_cast<LineEdit*>(World::scene()->getPopup()->getWidget(2))->getText();
+	string ystr = to_string(funcs[fid].solve(stod(xstr)));
+
+	World::scene()->setPopup(ProgState::createPopupMessage("Y at " + xstr + " is " + ystr, vec2<Size>(400, 100)));
+}
+
 void Program::eventSettingResolution(Button* but) {
 	World::winSys()->setResolution(static_cast<LineEdit*>(but)->getText());
 }
@@ -199,8 +206,7 @@ void Program::eventSettingScrollSpeed(Button* but) {
 
 void Program::setState(ProgState* newState) {
 	state.reset(newState);
-	World::scene()->clearScene();
-	World::scene()->layout.reset(state->createLayout());
+	World::scene()->setLayout(state->createLayout());
 }
 
 bool Program::wordValid(const string& str) {

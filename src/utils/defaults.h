@@ -171,9 +171,10 @@ const umap<string, mf1ptr> parserFuncs = {
 const int itemHeight = 30;
 const int sliderWidth = 10;
 const int caretWidth = 4;
-const double gvMoveFactor = 0.25;
-const double gvMouseZoomFactor = 0.01;
-const double gvKeyZoomFactor = 2.0;
+const int graphClickArea = 4;
+const double keyMoveFactor = 0.25;
+const double mouseZoomFactor = 0.01;
+const double keyZoomFactor = 2.0;
 
 // other random crap
 const int fontTestHeight = 100;

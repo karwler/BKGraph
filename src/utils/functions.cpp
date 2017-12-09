@@ -55,26 +55,32 @@ Function::Function(const string& line) :
 void Function::set(const string& line) {
 	// skip first spaces
 	sizt i = 0;
-	skipSpacers(line, i);
+	while (line[i] == ' ')
+		i++;
 
 	// get show
 	sizt start = i;
-	skipNonSpacers(line, i);
+	while (line[i] != ' ' && line[i] != '\0')
+		i++;
 	show = (i < line.length()) ? stob(line.substr(start, i-start)) : false;
 
 	// get color
 	uint8 clr[4] = {Default::colorGraph.r, Default::colorGraph.g, Default::colorGraph.b, Default::colorGraph.a};
 	for (uint8 c=0; c<4; c++) {
-		skipSpacers(line, i);
+		while (line[i] == ' ')
+			i++;
 		start = i;
-		skipNonSpacers(line, i);
+		while (line[i] != ' ' && line[i] != '\0')
+			i++;
+
 		if (i < line.length())
 			clr[c] = stoi(line.substr(start, i-start));
 	}
 	color = {clr[0], clr[1], clr[2], clr[3]};
 
 	// get function string
-	skipSpacers(line, i);
+	while (line[i] == ' ')
+		i++;
 	text = (i < line.length()) ? line.substr(i) : "";
 }
 

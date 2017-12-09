@@ -13,8 +13,9 @@ public:
 	virtual void eventContextBlank() {}
 	
 	virtual Layout* createLayout() = 0;
-	Popup* createPopupMessage(const string& msg, const vec2<Size>& size);
-	Popup* createPopupColorPick(SDL_Color color);
+	static Popup* createPopupMessage(const string& msg, const vec2<Size>& size);
+	static Popup* createPopupColorPick(SDL_Color color, Button* clickedBox);
+	static Popup* createPopupTextInput(const string& msg, void (Program::*call)(Button*), const vec2<Size>& size);
 };
 
 class ProgFuncs : public ProgState {
@@ -27,7 +28,6 @@ public:
 
 	sizt getFuncID(Widget* wgt) const { return interacts.at(wgt); }
 
-	Widget* lastClicked;	// for keeping track of stuff between jumping through events
 private:
 	map<Widget*, sizt> interacts;	// assigns widget reference to index of corresponding element in Program's funcs
 };
@@ -52,6 +52,8 @@ public:
 	virtual void eventBack();
 	
 	virtual Layout* createLayout();
+
+	GraphView* getGraphView() { return gview; }
 
 private:
 	GraphView* gview;

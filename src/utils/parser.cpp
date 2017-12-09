@@ -32,9 +32,12 @@ Subfunction* Parser::createTree(const string& function) {
 // FORMATTER
 
 void Parser::formatIgnores() {
-	for (id=0; id<func.length(); id++)
-		if (!isMathChar(func[id]))
-			func.erase(id--);
+	for (id=0; id<func.length();) {
+		if (func[id] == ' ')
+			func.erase(id);
+		else
+			id++;
+	}
 }
 
 void Parser::formatMultiplication() {

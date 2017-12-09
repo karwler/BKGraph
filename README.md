@@ -64,3 +64,4 @@ To move the viewport either hold down the left mouse button and move the mouse o
 To zoom either hold down Alt and the left mouse button and mov the mouse left or right or use the Page Up/Down keys.  
 To center the viewport press C.  
 To reset the viewoprt size press X.  
+Right clicking on a graph let's you input an x value to get the function's corresponding y value.  

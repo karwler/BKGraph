@@ -24,7 +24,8 @@ void Size::set(float PRC) {
 
 // WIDGET
 
-Widget::Widget(const Size& SIZ) :
+Widget::Widget(const Size& SIZ, void* DAT) :
+	data(DAT),
 	parent(nullptr),
 	id(SIZE_MAX),
 	relSize(SIZ)
@@ -46,11 +47,11 @@ void Widget::setRelSize(float prc) {
 }
 
 vec2i Widget::position() const {
-	return parent ? parent->wgtPos(id) : 0;
+	return parent->wgtPos(id);
 }
 
 vec2i Widget::size() const {
-	return parent ? parent->wgtSize(id) : World::winSys()->resolution();
+	return parent->wgtSize(id);
 }
 
 SDL_Rect Widget::rect() const {
@@ -59,16 +60,20 @@ SDL_Rect Widget::rect() const {
 	return {pos.x, pos.y, siz.x, siz.y};
 }
 
+SDL_Rect Widget::parentFrame() const {
+	return parent->frame();
+}
+
 // BUTTON
 
-Button::Button(void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ) :
-	Widget(SIZ),
+Button::Button(void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ, void* DAT) :
+	Widget(SIZ, DAT),
 	lcall(LCL),
 	rcall(RCL)
 {}
 
-void Button::drawSelf(const SDL_Rect& frame) {
-	World::drawSys()->drawRect(overlapRect(rect(), frame), Default::colorNormal);
+void Button::drawSelf() {
+	World::drawSys()->drawRect(overlapRect(rect(), parentFrame()), Default::colorNormal);
 }
 
 bool Button::onClick(const vec2i& mPos, uint8 mBut) {
@@ -81,14 +86,13 @@ bool Button::onClick(const vec2i& mPos, uint8 mBut) {
 
 // CHECK BOX
 
-CheckBox::CheckBox(bool ON, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ) :
-	Button(LCL, RCL, SIZ),
+CheckBox::CheckBox(bool ON, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ, void* DAT) :
+	Button(LCL, RCL, SIZ, DAT),
 	on(ON)
 {}
 
-void CheckBox::drawSelf(const SDL_Rect& frame) {
-	World::drawSys()->drawRect(overlapRect(rect(), frame), Default::colorNormal);	// draw background
-	World::drawSys()->drawRect(overlapRect(boxRect(), frame), on ? Default::colorLight : Default::colorDark);	// draw checkbox
+void CheckBox::drawSelf() {
+	World::drawSys()->drawCheckBox(this);
 }
 
 bool CheckBox::onClick(const vec2i& mPos, uint8 mBut) {
@@ -109,14 +113,13 @@ SDL_Rect CheckBox::boxRect() const {
 
 // COLOR BOX
 
-ColorBox::ColorBox(SDL_Color CLR, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ) :
-	Button(LCL, RCL, SIZ),
+ColorBox::ColorBox(SDL_Color CLR, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ, void* DAT) :
+	Button(LCL, RCL, SIZ, DAT),
 	color(CLR)
 {}
 
-void ColorBox::drawSelf(const SDL_Rect& frame) {
-	World::drawSys()->drawRect(overlapRect(rect(), frame), Default::colorNormal);	// draw background
-	World::drawSys()->drawRect(overlapRect(boxRect(), frame), color);	// draw colorbox
+void ColorBox::drawSelf() {
+	World::drawSys()->drawColorBox(this);
 }
 
 SDL_Rect ColorBox::boxRect() const {
@@ -128,15 +131,15 @@ SDL_Rect ColorBox::boxRect() const {
 
 // SLIDER
 
-Slider::Slider(int MIN, int MAX, int VAL, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ) :
-	Button(LCL, RCL, SIZ),
+Slider::Slider(int MIN, int MAX, int VAL, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ, void* DAT) :
+	Button(LCL, RCL, SIZ, DAT),
 	min(MIN),
 	max(MAX),
 	val(VAL)
 {}
 
-void Slider::drawSelf(const SDL_Rect& frame) {
-	World::drawSys()->drawSlider(this, frame);
+void Slider::drawSelf() {
+	World::drawSys()->drawSlider(this);
 }
 
 bool Slider::onClick(const vec2i& mPos, uint8 mBut) {
@@ -205,14 +208,14 @@ SDL_Rect Slider::sliderRect() const {
 
 // LABEL
 
-Label::Label(const string& TXT, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ, Alignment ALG) :
-	Button(LCL, RCL, SIZ),
+Label::Label(const string& TXT, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ, Alignment ALG, void* DAT) :
+	Button(LCL, RCL, SIZ, DAT),
 	align(ALG),
 	text(TXT)
 {}
 
-void Label::drawSelf(const SDL_Rect& frame) {
-	World::drawSys()->drawLabel(this, frame);
+void Label::drawSelf() {
+	World::drawSys()->drawLabel(this);
 }
 
 vec2i Label::textPos() const {
@@ -226,8 +229,8 @@ vec2i Label::textPos() const {
 
 // LINE EDITOR
 
-LineEdit::LineEdit(const string& TXT, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ, TextType TYP) :
-	Label(TXT, LCL, RCL, SIZ, Alignment::left),
+LineEdit::LineEdit(const string& TXT, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ, TextType TYP, void* DAT) :
+	Label(TXT, LCL, RCL, SIZ, Alignment::left, DAT),
 	textType(TYP),
 	textOfs(0),
 	cpos(0)
@@ -305,9 +308,10 @@ void LineEdit::onKeypress(const SDL_Keysym& key) {
 }
 
 void LineEdit::onText(string str) {
-	cleanString(str, textType);
+	sizt olen = text.length();
 	text.insert(cpos, str);
-	setCPos(cpos + str.length());
+	cleanString(text, textType);
+	setCPos(cpos + (text.length() - olen));
 }
 
 vec2i LineEdit::textPos() const {

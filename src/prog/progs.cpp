@@ -12,25 +12,20 @@ void ProgState::eventKeypress(const SDL_Keysym& key) {
 }
 
 Popup* ProgState::createPopupMessage(const string& msg, const vec2<Size>& size) {
-	vector<Widget*> a = {
-		new Widget(1.f),
-		new Label("Ok", &Program::eventClosePopup, nullptr, 1.f, Alignment::center),
-		new Widget(1.f)
-	};
-	Layout* l = new Layout(1.f, false);
-	l->setWidgets(a);
+	Layout* bottom = new Layout(1.f, false);
+	bottom->setWidgets({new Widget(1.f), new Label("Ok", &Program::eventClosePopup, nullptr, 1.f, Alignment::center), new Widget(1.f)});
 
-	vector<Widget*> b = {
+	vector<Widget*> a = {
 		new Label(msg),
 		new Widget(10),
-		l
+		bottom
 	};
 	Popup* p = new Popup(size);
-	p->setWidgets(b);
+	p->setWidgets(a);
 	return p;
 }
 
-Popup* ProgState::createPopupColorPick(SDL_Color color) {
+Popup* ProgState::createPopupColorPick(SDL_Color color, Button* clickedBox) {
 	Layout* red = new Layout(1.f, false);
 	red->setWidgets({new Label("R:", nullptr, nullptr, 60), new Slider(0, 255, color.r, &Program::eventGraphColorPickRed), new Widget(10)});
 	Layout* green = new Layout(1.f, false);
@@ -39,6 +34,8 @@ Popup* ProgState::createPopupColorPick(SDL_Color color) {
 	blue->setWidgets({new Label("B:", nullptr, nullptr, 60), new Slider(0, 255, color.b, &Program::eventGraphColorPickBlue), new Widget(10)});
 	Layout* alpha = new Layout(1.f, false);
 	alpha->setWidgets({new Label("A:", nullptr, nullptr, 60), new Slider(0, 255, color.a, &Program::eventGraphColorPickAlpha), new Widget(10)});
+	Layout* bottom = new Layout(1.f, false);
+	bottom->setWidgets({new Widget(1.f), new Label("Ok", &Program::eventGraphColorPickConfirm, nullptr, 1.f, Alignment::center, clickedBox), new Widget(1.f)});
 
 	vector<Widget*> a = {
 		new ColorBox(color),
@@ -51,9 +48,27 @@ Popup* ProgState::createPopupColorPick(SDL_Color color) {
 		new Widget(0.1f),
 		alpha,
 		new Widget(0.1f),
-		new Label("Ok", &Program::eventGraphColorPickConfirm, nullptr, 1.f, Alignment::center)
+		bottom
 	};
 	Popup* p = new Popup(vec2<Size>(400, 300));
+	p->setWidgets(a);
+	return p;
+}
+
+Popup* ProgState::createPopupTextInput(const string& msg, void (Program::*call)(Button*), const vec2<Size>& size) {
+	LineEdit* field = new LineEdit("", nullptr, nullptr, 1.f, TextType::sFloating);
+	World::scene()->setCapture(field);
+	Layout* bottom = new Layout(1.f, false);
+	bottom->setWidgets({new Widget(1.f), new Label("Ok", call, nullptr, 1.f, Alignment::center), new Widget(1.f)});
+
+	vector<Widget*> a = {
+		new Label(msg),
+		new Widget(10),
+		field,
+		new Widget(10),
+		bottom		
+	};
+	Popup* p = new Popup(size);
 	p->setWidgets(a);
 	return p;
 }
@@ -99,7 +114,7 @@ Layout* ProgFuncs::createLayout() {
 		sizt id = i/2;
 		CheckBox* cb = new CheckBox(frms[id].show, &Program::eventSwitchGraphShow, &Program::eventOpenContextFunction, 30);
 		ColorBox* lb = new ColorBox(frms[id].color, &Program::eventOpenGraphColorPick, &Program::eventOpenContextFunction, 30);
-		LineEdit* le = new LineEdit(frms[id].text, &Program::eventGraphFunctionChanged, &Program::eventOpenContextFunction);
+		LineEdit* le = new LineEdit(frms[id].text, &Program::eventGraphFunctionChanged, &Program::eventOpenContextFunction, 1.f, TextType::function);
 		
 		interacts.insert(make_pair(cb, id));
 		interacts.insert(make_pair(lb, id));
@@ -158,7 +173,7 @@ Layout* ProgVars::createLayout() {
 
 		LineEdit* nm = new LineEdit(it.first, &Program::eventVarRename, &Program::eventOpenContextVariable);
 		Label* sp = new Label("=", nullptr, &Program::eventOpenContextVariable, 0.1f, Alignment::center);
-		LineEdit* vl = new LineEdit(to_string(it.second), &Program::eventVarRevalue, &Program::eventOpenContextVariable, 1.f, TextType::floating);
+		LineEdit* vl = new LineEdit(to_string(it.second), &Program::eventVarRevalue, &Program::eventOpenContextVariable, 1.f, TextType::sFloating);
 		
 		interacts.insert(make_pair(nm, it.first));
 		interacts.insert(make_pair(sp, it.first));
@@ -203,10 +218,9 @@ Layout* ProgGraph::createLayout() {
 	topbar->setWidgets(wgts);
 
 	gview = new GraphView();
-	gview->setGraphs(World::program()->getFunctions());
-
 	Layout* lay = new Layout();
 	lay->setWidgets({topbar, new Widget(10), gview});
+	gview->setGraphs(World::program()->getFunctions());
 	return lay;
 }
 
@@ -245,7 +259,7 @@ Layout* ProgSettings::createLayout() {
 	Layout* renderer = new Layout(30, false);
 	renderer->setWidgets({new Label("Renderer:", nullptr, nullptr, 200), new Widget(10), new Label(World::winSys()->getSettings().renderer, &Program::eventSettingRendererOpen, nullptr, 2.f)});
 	Layout* speed = new Layout(30, false);
-	speed->setWidgets({new Label("Scroll Speed:", nullptr, nullptr, 200), new Widget(10), new LineEdit(to_string(World::winSys()->getSettings().scrollSpeed), &Program::eventSettingScrollSpeed, nullptr, 1.f, TextType::integer)});
+	speed->setWidgets({new Label("Scroll Speed:", nullptr, nullptr, 200), new Widget(10), new LineEdit(to_string(World::winSys()->getSettings().scrollSpeed), &Program::eventSettingScrollSpeed, nullptr, 1.f, TextType::sIntegerSpaced)});
 	
 	wgts = {
 		view,

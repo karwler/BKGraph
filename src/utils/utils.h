@@ -10,22 +10,34 @@ enum class Alignment : uint8 {
 
 enum class TextType : uint8 {
 	text,
-	integer,
-	floating
+	sInteger,
+	sIntegerSpaced,
+	uInteger,
+	uIntegerSpaced,
+	sFloating,
+	sFloatingSpaced,
+	uFloating,
+	uFloatingSpaced,
+	function
 };
 
 // string stuff
 bool strcmpCI(const string& strl, const string& strr);	// case insensitive check if strings are equal
 bool findChar(const string& str, char c);				// whether chacater is in string
 bool findChar(const string& str, char c, sizt& id);		// same as above except it sets id to first found character's index
-inline void skipSpacers(const string& str, sizt& i, char spacer=' ') { while (str[i] == spacer) i++; }
-inline void skipNonSpacers(const string& str, sizt& i, char spacer=' ') { while (str[i] != spacer && str[i] != '\0') i++; }
 vector<vec2t> getWords(const string& line, char spacer=' ');	// returns index of first character and length of words in line
 sizt jumpToWordStart(const string& str, sizt i, char spacer=' ');	// returns index of first character of word before i
 sizt jumpToWordEnd(const string& str, sizt i, char spacer=' ');	// returns index of character after last character of word after i
 void cleanString(string& str, TextType type);
-void cleanIntString(string& str);
-void cleanFloatString(string& str);
+void cleanSIntString(string& str);
+void cleanSIntSpacedString(string& str, sizt i=0);
+void cleanUIntString(string& str, sizt i=0);
+void cleanUIntSpacedString(string& str);
+void cleanSFloatString(string& str);
+void cleanSFloatSpacedString(string& str, sizt i=0);
+void cleanUFloatString(string& str, sizt i=0);
+void cleanUFloatSpacedString(string& str);
+void cleanFunctionString(string& str);
 
 // path string functions
 bool isAbsolute(const string& path);
@@ -44,7 +56,6 @@ inline bool isSmallLetter(char c) { return c >= 'a' && c <= 'z'; }
 inline bool isCapitalLetter(char c) { return c >= 'A' && c <= 'Z'; }
 inline bool isLetter(char c) { return isCapitalLetter(c) || isSmallLetter(c) || c == '_'; }
 inline bool isOperator(char c) { return c == '+' || c == '-' || c == '*' || c == '/' || c == '^' || c == '!'; }
-inline bool isMathChar(char c) { return isNumber(c) || isLetter(c) || isOperator(c) || c == '(' || c == ')'; }
 
 // conversions
 string wtos(const wstring& wstr);
@@ -69,11 +80,15 @@ inline double dFac(double a) { return factorial(a); }
 
 // geometry?
 SDL_Rect cropRect(SDL_Rect& rect, const SDL_Rect& frame);	// crop rect so it fits in the frame (aka set rect to the area where they overlap) and return how much was cut off
-SDL_Rect overlapRect(const SDL_Rect& a, const SDL_Rect& b);	// same as above except it returns the overlap instead of the crop
+SDL_Rect overlapRect(SDL_Rect rect, const SDL_Rect& frame);	// same as above except it returns the overlap instead of the crop
 bool cropLine(vec2i& pos, vec2i& end, const SDL_Rect& frame);	// crops line to frame. returns false if line out of frame
 
+inline vec2i rectEnd(const SDL_Rect& rect) {
+	return vec2i(rect.x + rect.w - 1, rect.y + rect.h - 1);
+}
+
 inline bool inRect(const vec2i& point, const SDL_Rect& rect) {	// check if point is in rect
-	return point.x >= rect.x && point.x <= rect.x + rect.w && point.y >= rect.y && point.y <= rect.y + rect.h;
+	return point.x >= rect.x && point.x < rect.x + rect.w && point.y >= rect.y && point.y < rect.y + rect.h;
 }
 
 template <typename T>	// convert dot from coordinate system to pixels in window

@@ -12,6 +12,8 @@ void Scene::onKeypress(const SDL_KeyboardEvent& key) {
 }
 
 void Scene::onMouseMove(const vec2i& mPos, const vec2i& mMov) {
+	updateFocused(mPos);
+
 	if (capture)
 		capture->onDrag(mPos, mMov);
 }
@@ -19,11 +21,9 @@ void Scene::onMouseMove(const vec2i& mPos, const vec2i& mMov) {
 void Scene::onMouseDown(const vec2i& mPos, uint8 mBut) {
 	if (LineEdit* le = dynamic_cast<LineEdit*>(capture))	// mouse button cancels keyboard capture
 		le->confirm();
-	else if (context)
-		context->onClick(mPos, mBut);
-	else if (popup)
-		popup->onClick(mPos, mBut);
-	else if (!layout->onClick(mPos, mBut) && mBut == SDL_BUTTON_RIGHT)	// check if anything got clicked. if that's not the case and it's a right click do a blank right click
+	if (context && context->onClick(mPos, mBut))	// if context menu got clicked
+		return;
+	if (!focused.back()->onClick(mPos, mBut) && mBut == SDL_BUTTON_RIGHT)	// if nothing got clicked and it's a right click do a blank right click
 		World::program()->getState()->eventContextBlank();
 }
 
@@ -33,47 +33,35 @@ void Scene::onMouseUp(uint8 mBut) {
 }
 
 void Scene::onMouseWheel(int wMov) {
-	if (ScrollArea* box = checkMouseOverScrollArea(World::winSys()->mousePos(), popup.get() ? static_cast<Layout*>(popup.get()) : layout.get()))	// if mouse is over a ScrollArea scroll it
-		box->scrollList(wMov*Default::scrollFactorWheel);
-}
-
-ScrollArea* Scene::checkMouseOverScrollArea(const vec2i& mPos, Layout* box) {
-	if (!inRect(mPos, box->rect()))	// mouse not over box
-		return nullptr;
-	if (ScrollArea* sca = dynamic_cast<ScrollArea*>(box))	// box might be a scroll area
-		return sca;
-
-	for (Widget* it : box->getWidgets())	// check box's widgets
-		if (Layout* lay = dynamic_cast<Layout*>(it))
-			if (ScrollArea* sa = checkMouseOverScrollArea(mPos, lay))	// check if lay is scroll area or if it contains a scroll area
-				return sa;
-	return nullptr;	// nothing found
+	if (ScrollArea* box = getFocusedScrollArea())
+		box->scrollList(wMov * Default::scrollFactorWheel);
 }
 
 void Scene::onText(const string& text) {
 	static_cast<LineEdit*>(capture)->onText(text);	// text input should only run if line edit is being captured, therefore a cast check shouldn't be necessary
 }
 
-void Scene::clearScene() {
-	setCapture(nullptr);
-	popup.reset();
-	context.reset();
-	layout.reset();
-	World::winSys()->getFontSet().clear();
-}
-
-void Scene::resizeScene() {
+void Scene::onResize() {
 	layout->onResize();
 	if (popup)
 		popup->onResize();
 }
 
-void Scene::setCapture(Widget* cbox) {
-	capture = cbox;
-	if (dynamic_cast<LineEdit*>(capture))
-		SDL_StartTextInput();
-	else
-		SDL_StopTextInput();
+void Scene::setLayout(Layout* newLayout) {
+	// clear scene
+	World::winSys()->getFontSet().clear();
+	setCapture(nullptr);
+	popup.reset();
+	context.reset();
+
+	// set stuff up
+	layout.reset(newLayout);
+	setFocused(World::winSys()->mousePos());
+}
+
+void Scene::setPopup(Popup* newPopup) {
+	popup.reset(newPopup);
+	setFocused(World::winSys()->mousePos());
 }
 
 void Scene::setContext(Context* newContext) {
@@ -90,4 +78,53 @@ void Scene::correctContextPos(int& pos, int size, int res) {
 		pos -= size;
 	if (pos < 0)
 		pos = 0;
+}
+
+void Scene::setCapture(Widget* cbox) {
+	capture = cbox;
+	if (dynamic_cast<LineEdit*>(capture))
+		SDL_StartTextInput();
+	else
+		SDL_StopTextInput();
+}
+
+void Scene::setFocused(const vec2i& mPos) {
+	Layout* lay = popup.get() ? static_cast<Layout*>(popup.get()) : layout.get();
+	focused.resize(1);
+	focused[0] = lay;
+	setFocusedElement(mPos, lay);
+}
+
+void Scene::updateFocused(const vec2i& mPos) {
+	// figure out how far in focused needs to be modified
+	sizt i = 1;	// no need to check top widget
+	for (; i<focused.size(); i++)
+		if (!inRect(mPos, overlapRect(focused[i]->rect(), focused[i]->parentFrame())))
+			break;
+
+	// get rid of widgets not overlapping with mouse position
+	if (i < focused.size())
+		focused.erase(focused.begin() + i, focused.end());
+	
+	// append new widgets if possible
+	if (Layout* lay = dynamic_cast<Layout*>(focused.back()))
+		setFocusedElement(mPos, lay);
+}
+
+void Scene::setFocusedElement(const vec2i& mPos, Layout* box) {
+	SDL_Rect frame = box->frame();
+	for (Widget* it : box->getWidgets())
+		if (inRect(mPos, overlapRect(it->rect(), frame))) {
+			focused.push_back(it);
+			if (Layout* lay = dynamic_cast<Layout*>(it))
+				setFocusedElement(mPos, lay);
+			break;
+		}
+}
+
+ScrollArea* Scene::getFocusedScrollArea() const {
+	for (Widget* it : focused)
+		if (ScrollArea* sa = dynamic_cast<ScrollArea*>(it))
+			return sa;
+	return nullptr;
 }

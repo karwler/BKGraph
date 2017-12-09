@@ -12,13 +12,14 @@ public:
 
 	void drawWidgets();
 
-	void drawSlider(Slider* wgt, SDL_Rect frame);
-	void drawLabel(Label* wgt, SDL_Rect frame);
-	void drawGraphView(GraphView* wgt, SDL_Rect frame);
-	void drawLayout(Layout* box, SDL_Rect frame);
-	void drawScrollArea(ScrollArea* box, SDL_Rect frame);
-	void drawPopup(Popup* pop, const SDL_Rect& frame);
-	void drawContext(Context* con, SDL_Rect frame);
+	void drawCheckBox(CheckBox* wgt);
+	void drawColorBox(ColorBox* wgt);
+	void drawSlider(Slider* wgt);
+	void drawLabel(Label* wgt);
+	void drawGraphView(GraphView* wgt);
+	void drawScrollArea(ScrollArea* box);
+	void drawPopup(Popup* pop);
+	void drawContext(Context* con);
 
 	void drawRect(const SDL_Rect& rect, SDL_Color color);
 	void drawLine(vec2i pos, vec2i end, SDL_Color color, const SDL_Rect& frame);

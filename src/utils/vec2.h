@@ -14,7 +14,7 @@ vec2<T> reflect(const vec2<T>& vec, vec2<T> nrm);
 template <typename T>
 vec2<T> rotate(const vec2<T>& vec, const T& ang);
 template <typename T>
-unsigned char intersect(vec2<T>& in, vec2<T>& im, const vec2<T>& ap, const vec2<T>& av, const vec2<T>& bp, const vec2<T>& bv);
+char intersect(vec2<T>& in, vec2<T>& im, const vec2<T>& ap, const vec2<T>& av, const vec2<T>& bp, const vec2<T>& bv);
 
 template <typename T>
 struct vec2 {
@@ -34,11 +34,17 @@ struct vec2 {
 	T& operator[](char i) {
 		if (i == 0)
 			return x;
-		return y;
+		if (i == 1)
+			return y;
+		throw "out of range";
 	}
 
-	const T& operator[](unsigned char i) const {
-		return (i == 0) ? x : y;
+	const T& operator[](char i) const {
+		if (i == 0)
+			return x;
+		if (i == 1)
+			return y;
+		throw "out of range";
 	}
 
 	vec2& operator=(const vec2& v) {
@@ -95,15 +101,15 @@ struct vec2 {
 		return *this;
 	}
 
-	vec2& operator<<=(unsigned char n) {
-		x <<= n;
-		y <<= n;
+	vec2& operator<<=(const vec2& v) {
+		x <<= v.x;
+		y <<= v.y;
 		return *this;
 	}
 
-	vec2& operator>>=(unsigned char n) {
-		x <<= n;
-		y <<= n;
+	vec2& operator>>=(const vec2& v) {
+		x >>= v.x;
+		y >>= v.y;
 		return *this;
 	}
 
@@ -133,16 +139,12 @@ struct vec2 {
 		return t;
 	}
 
-	bool isNull() const {
-		return x == T(0) && y == T(0);
+	bool has(const T& n) const {
+		return x == n || y == n;
 	}
 
-	bool hasNull() const {
-		return x == T(0) || y == T(0);
-	}
-
-	bool noNull() const {
-		return x != T(0) && y != T(0);
+	bool hasNot(const T& n) const {
+		return x != n && y != n;
 	}
 
 	T length() const {
@@ -304,32 +306,32 @@ vec2<T> operator^(const T& a, const vec2<T>& b) {
 }
 
 template <typename T>
-vec2<T> operator<<(const vec2<T>& a, const vec2<unsigned char>& b) {
+vec2<T> operator<<(const vec2<T>& a, const vec2<T>& b) {
 	return vec2<T>(a.x << b.x, a.y << b.y);
 }
 
 template <typename T>
-vec2<T> operator<<(const vec2<T>& a, unsigned char b) {
+vec2<T> operator<<(const vec2<T>& a, const T& b) {
 	return vec2<T>(a.x << b, a.y << b);
 }
 
 template <typename T>
-vec2<T> operator<<(const T& a, const vec2<unsigned char>& b) {
+vec2<T> operator<<(const T& a, const vec2<T>& b) {
 	return vec2<T>(a << b.x, a << b.y);
 }
 
 template <typename T>
-vec2<T> operator>>(const vec2<T>& a, const vec2<unsigned char>& b) {
+vec2<T> operator>>(const vec2<T>& a, const vec2<T>& b) {
 	return vec2<T>(a.x >> b.x, a.y >> b.y);
 }
 
 template <typename T>
-vec2<T> operator>>(const vec2<T>& a, unsigned char b) {
+vec2<T> operator>>(const vec2<T>& a, const T& b) {
 	return vec2<T>(a.x >> b, a.y >> b);
 }
 
 template <typename T>
-vec2<T> operator>>(const T& a, const vec2<unsigned char>& b) {
+vec2<T> operator>>(const T& a, const vec2<T>& b) {
 	return vec2<T>(a >> b.x, a >> b.y);
 }
 
@@ -387,7 +389,7 @@ vec2<T> rotate(const vec2<T>& vec, const T& ang) {
 }
 
 template <typename T>
-unsigned char intersect(vec2<T>& in, vec2<T>& im, const vec2<T>& ap, const vec2<T>& av, const vec2<T>& bp, const vec2<T>& bv) {	// return 0 if no intersection, 1 if lines intersect, 2 if lines overlap
+char intersect(vec2<T>& in, vec2<T>& im, const vec2<T>& ap, const vec2<T>& av, const vec2<T>& bp, const vec2<T>& bv) {	// return 0 if no intersection, 1 if lines intersect, 2 if lines overlap
 	vec2<T> dp = bp - ap;
 	T dt = cross(av, bv);
 	T ta = cross(dp, bv);
