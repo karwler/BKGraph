@@ -10,4 +10,5 @@ Optional:
 - mingw support
 
 Fixes
+- better solution for closing popups using keyboard
 - test/fix parser

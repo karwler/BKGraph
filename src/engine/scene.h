@@ -1,6 +1,5 @@
 #pragma once
 
-#include "prog/program.h"
 #include "widgets/context.h"
 #include "widgets/layouts.h"
 
@@ -14,29 +13,30 @@ public:
 	void onMouseDown(const vec2i& mPos, uint8 mBut);
 	void onMouseUp(uint8 mBut);
 	void onMouseWheel(int wMov);
-	void onText(const string& text);
+	void onText(const char* text);
 	void onResize();
 
 	Layout* getLayout() { return layout.get(); }
 	void setLayout(Layout* newLayout);
 	Popup* getPopup() { return popup.get(); }
-	void setPopup(Popup* newPopup);
+	void setPopup(Popup* newPopup, Widget* newCapture=nullptr);
+	void setPopup(const pair<Popup*, Widget*>& popcap) { setPopup(popcap.first, popcap.second); }
 	Context* getContext() { return context.get(); }
 	void setContext(Context* newContext);	// also sets context's position
 	Widget* getCapture() { return capture; }
 	void setCapture(Widget* cbox);
 	
 private:
-	uptr<Layout> layout;
+	uptr<Layout> layout;	// the main layout (should never be nullptr)
 	uptr<Popup> popup;
 	uptr<Context> context;
 
-	vector<Widget*> focused;
-	Widget* capture;	// either pointer to LineEdit currently hogging all keyboard input or ScrollArea whichs slider or Slider which is currently being dragged. nullptr if nothing is being ca[tired or dragged
+	vector<Widget*> focused;	// list of widgets over which the mouse is currently positioned
+	Widget* capture;	// either pointer to LineEdit currently hogging all keyboard input or ScrollArea whichs slider or Slider which is currently being dragged. nullptr if nothing is being captured or dragged
 	
-	void setFocused(const vec2i& mPos);
-	void updateFocused(const vec2i& mPos);
-	void setFocusedElement(const vec2i& mPos, Layout* box);
-	ScrollArea* getFocusedScrollArea() const;
-	void correctContextPos(int& pos, int size, int res);
+	void setFocused(const vec2i& mPos);		// resets focused
+	void updateFocused(const vec2i& mPos);	// optimized version of setFocused for when mouse is moved by the user
+	void setFocusedElement(const vec2i& mPos, Layout* box);	// for appending elements to focused
+	ScrollArea* getFocusedScrollArea() const;				// find first scroll area over which mouse is positioned
+	void correctContextPos(int& pos, int size, int res);	// fixes context's position if it goes out of frame
 };

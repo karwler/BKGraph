@@ -9,23 +9,42 @@ Graph::Graph(sizt FID) :
 // GRAPH VIEW
 
 GraphView::GraphView(const Size& SIZ, void* DAT) :
-	Widget(SIZ, DAT),
-	lastClickedGraph(nullptr)
+	Widget(SIZ, DAT)
 {}
 
 void GraphView::drawSelf() {
 	World::drawSys()->drawGraphView(this);
 }
 
+bool GraphView::onKeypress(const SDL_Keysym& key) {
+	if (key.scancode == Default::keyLeft)
+		setViewPos(vec2f(World::winSys()->getSettings().viewPos.x - World::winSys()->getSettings().viewSize.x * Default::keyMoveFactor, World::winSys()->getSettings().viewPos.y));
+	else if (key.scancode == Default::keyRight)
+		setViewPos(vec2f(World::winSys()->getSettings().viewPos.x + World::winSys()->getSettings().viewSize.x * Default::keyMoveFactor, World::winSys()->getSettings().viewPos.y));
+	else if (key.scancode == Default::keyUp)
+		setViewPos(vec2f(World::winSys()->getSettings().viewPos.x, World::winSys()->getSettings().viewPos.y - World::winSys()->getSettings().viewSize.y * Default::keyMoveFactor));
+	else if (key.scancode == Default::keyDown)
+		setViewPos(vec2f(World::winSys()->getSettings().viewPos.x, World::winSys()->getSettings().viewPos.y + World::winSys()->getSettings().viewSize.y * Default::keyMoveFactor));
+	else if (key.scancode == Default::keyZoomIn)
+		setViewSize(World::winSys()->getSettings().viewSize / Default::keyZoomFactor);
+	else if (key.scancode == Default::keyZoomOut)
+		setViewSize(World::winSys()->getSettings().viewSize * Default::keyZoomFactor);
+	else if (key.scancode == Default::keyCenter)
+		setViewPos(World::winSys()->getSettings().viewSize / -2.f);
+	else if (key.scancode == Default::keyZoomReset)
+		setViewSize(Default::viewportSize);
+	else
+		return false;
+	return true;
+}
+
 bool GraphView::onClick(const vec2i& mPos, uint8 mBut) {
 	if (mBut == SDL_BUTTON_LEFT)
 		World::scene()->setCapture(this);
 	else if (mBut == SDL_BUTTON_RIGHT) {
-		Graph* graph = getMouseOverGraph(mPos);
-		if (graph) {
-			lastClickedGraph = graph;
-			World::scene()->setPopup(ProgState::createPopupTextInput("Get Y", &Program::eventGetYConfirm, vec2<Size>(300, 200)));
-		}
+		data = getMouseOverGraph(mPos);
+		if (data)
+			World::scene()->setPopup(ProgState::createPopupTextInput("Get Y", &Program::eventGetYConfirm, LineEdit::TextType::sFloating, vec2<Size>(300, 200)));
 	}
 	return true;
 }
@@ -40,11 +59,10 @@ Graph* GraphView::getMouseOverGraph(const vec2i& mPos) {
 }
 
 void GraphView::onDrag(const vec2i& mPos, const vec2i& mMov) {
-	if (SDL_GetKeyboardState(nullptr)[SDL_SCANCODE_LALT]) {	// if holding alt setViewSize
-		double val = 1 + double(std::abs(mMov.x)) * Default::mouseZoomFactor;
-		setViewSize((mMov.x < 0.0) ? World::winSys()->getSettings().viewSize * val : World::winSys()->getSettings().viewSize / val);
-	} else	// otherwise move view
-		setViewPos(World::winSys()->getSettings().viewPos - vec2d(mMov) * World::winSys()->getSettings().viewSize / vec2d(size()));
+	if (SDL_GetKeyboardState(nullptr)[SDL_SCANCODE_LSHIFT])	// if holding left shift setViewSize
+		zoom(float(mMov.x) * Default::mouseZoomFactor);
+	else	// otherwise move view
+		setViewPos(World::winSys()->getSettings().viewPos - vec2f(mMov) * World::winSys()->getSettings().viewSize / vec2f(size()));
 }
 
 void GraphView::onUndrag(uint8 mBut) {
@@ -52,23 +70,13 @@ void GraphView::onUndrag(uint8 mBut) {
 		World::scene()->setCapture(nullptr);
 }
 
-void GraphView::onKeypress(const SDL_Keysym& key) {
-	if (key.scancode == Default::keyLeft)
-		setViewPos(vec2d(World::winSys()->getSettings().viewPos.x - World::winSys()->getSettings().viewSize.x * Default::keyMoveFactor, World::winSys()->getSettings().viewPos.y));
-	else if (key.scancode == Default::keyRight)
-		setViewPos(vec2d(World::winSys()->getSettings().viewPos.x + World::winSys()->getSettings().viewSize.x * Default::keyMoveFactor, World::winSys()->getSettings().viewPos.y));
-	else if (key.scancode == Default::keyUp)
-		setViewPos(vec2d(World::winSys()->getSettings().viewPos.x, World::winSys()->getSettings().viewPos.y - World::winSys()->getSettings().viewSize.y * Default::keyMoveFactor));
-	else if (key.scancode == Default::keyDown)
-		setViewPos(vec2d(World::winSys()->getSettings().viewPos.x, World::winSys()->getSettings().viewPos.y + World::winSys()->getSettings().viewSize.y * Default::keyMoveFactor));
-	else if (key.scancode == Default::keyZoomIn)
-		setViewSize(World::winSys()->getSettings().viewSize / Default::keyZoomFactor);
-	else if (key.scancode == Default::keyZoomOut)
-		setViewSize(World::winSys()->getSettings().viewSize * Default::keyZoomFactor);
-	else if (key.scancode == Default::keyCenter)
-		setViewPos(World::winSys()->getSettings().viewSize / -2.0);
-	else if (key.scancode == Default::keyZoomReset)
-		setViewSize(Default::viewportSize);
+void GraphView::onScroll(int wMov) {
+	zoom(float(wMov) * Default::wheelZoomFactor);
+}
+
+void GraphView::zoom(float mov) {
+	float val = 1.f + std::abs(mov);
+	setViewSize((mov < 0.f) ? World::winSys()->getSettings().viewSize * val : World::winSys()->getSettings().viewSize / val);
 }
 
 void GraphView::onResize() {
@@ -89,23 +97,23 @@ void GraphView::setGraphs(const vector<Function>& funcs) {
 
 void GraphView::updateDots() {
 	vec2i pos = position();
-	vec2d siz = size();
+	vec2f siz = size();
 
 	for (Graph& it : graphs)
 		for (sizt i=0; i<it.dots.size(); i++) {
-			it.dots[i].x = World::winSys()->getSettings().viewPos.x + World::winSys()->getSettings().viewSize.x / siz.x * double(i);	// get x value in coordinate system
+			it.dots[i].x = World::winSys()->getSettings().viewPos.x + World::winSys()->getSettings().viewSize.x / siz.x * float(i);	// get x value in coordinate system
 			it.dots[i].y = World::program()->getFunction(it.fid).solve(it.dots[i].x);	// get the corresponding y value
 			it.pixs[i] = {pos.x + int(i), pos.y + int(dotToPix(it.dots[i].y, World::winSys()->getSettings().viewPos.y, World::winSys()->getSettings().viewSize.y, siz.y))};	// get pixel position
 		}
 }
 
-void GraphView::setViewPos(const vec2d& newPos) {
+void GraphView::setViewPos(const vec2f& newPos) {
 	World::winSys()->setViewPos(newPos);
 	updateDots();
 }
 
-void GraphView::setViewSize(const vec2d& newSize) {
-	World::winSys()->setViewPos(World::winSys()->getSettings().viewPos + (World::winSys()->getSettings().viewSize - newSize) / 2.0);
+void GraphView::setViewSize(const vec2f& newSize) {
+	World::winSys()->setViewPos(World::winSys()->getSettings().viewPos + (World::winSys()->getSettings().viewSize - newSize) / 2.f);
 	World::winSys()->setViewSize(newSize);
 	updateDots();
 }

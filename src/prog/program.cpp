@@ -15,7 +15,7 @@ Program::~Program() {
 }
 
 void Program::init(ProgState* initState) {
-	for (Function& it : funcs)
+	for (Function& it : funcs)	// this can't be done in the constructor
 		it.setFunc();
 
 	setState(initState);
@@ -46,8 +46,7 @@ void Program::eventExit(Button* but) {
 }
 
 void Program::eventSwitchGraphShow(Button* but) {
-	sizt id = static_cast<ProgFuncs*>(state.get())->getFuncID(but);
-	funcs[id].show = static_cast<CheckBox*>(but)->on;
+	funcs[but->getParent()->getID()].show = static_cast<CheckBox*>(but)->on;
 }
 
 void Program::eventOpenGraphColorPick(Button* but) {
@@ -56,15 +55,13 @@ void Program::eventOpenGraphColorPick(Button* but) {
 
 void Program::eventGraphFunctionChanged(Button* but) {
 	LineEdit* ledt = static_cast<LineEdit*>(but);
-	string str = ledt->getText();
-	if (str.empty())
+	if (ledt->getText().empty())
 		return;
 
-	sizt id = static_cast<ProgFuncs*>(state.get())->getFuncID(ledt);
-	funcs[id].text = str;
+	sizt id = ledt->getParent()->getID();
+	funcs[id].text = ledt->getText();
 	if (!funcs[id].setFunc())
 		World::scene()->setPopup(ProgState::createPopupMessage("Invalid Function", vec2<Size>(300, 100)));
-	ledt->setText(funcs[id].text);
 }
 
 void Program::eventOpenContextFunction(Button* but) {
@@ -72,43 +69,43 @@ void Program::eventOpenContextFunction(Button* but) {
 		Context::Item("Delete", &Program::eventDelFunction),
 		Context::Item("Add Function", &Program::eventAddFunction)
 	};
-	World::scene()->setContext(new Context(but, items, World::winSys()->mousePos()));
+	World::scene()->setContext(new Context(but, items, WindowSys::mousePos()));
 }
 
 void Program::eventAddFunction(Context::Item* item) {
 	funcs.push_back(Function());
-	setState(new ProgFuncs);
+	World::scene()->setLayout(state->createLayout());
 }
 
 void Program::eventDelFunction(Context::Item* item) {
-	sizt id = static_cast<ProgFuncs*>(state.get())->getFuncID(World::scene()->getContext()->getWidget());
+	sizt id = World::scene()->getContext()->getWidget()->getParent()->getID();
 	funcs[id].clear();
-	funcs.erase(funcs.begin()+id);
+	funcs.erase(funcs.begin() + id);
 
-	setState(new ProgFuncs);
+	World::scene()->setLayout(state->createLayout());
 }
 
 void Program::eventGraphColorPickRed(Button* but) {
-	static_cast<ColorBox*>(World::scene()->getPopup()->getWidget(0))->color.r = static_cast<Slider*>(but)->getVal();
+	static_cast<ColorBox*>(static_cast<Layout*>(World::scene()->getPopup()->getWidget(4))->getWidget(0))->color.r = static_cast<Slider*>(but)->getVal();
 }
 
 void Program::eventGraphColorPickGreen(Button* but) {
-	static_cast<ColorBox*>(World::scene()->getPopup()->getWidget(0))->color.g = static_cast<Slider*>(but)->getVal();
+	static_cast<ColorBox*>(static_cast<Layout*>(World::scene()->getPopup()->getWidget(4))->getWidget(0))->color.g = static_cast<Slider*>(but)->getVal();
 }
 
 void Program::eventGraphColorPickBlue(Button* but) {
-	static_cast<ColorBox*>(World::scene()->getPopup()->getWidget(0))->color.b = static_cast<Slider*>(but)->getVal();
+	static_cast<ColorBox*>(static_cast<Layout*>(World::scene()->getPopup()->getWidget(4))->getWidget(0))->color.b = static_cast<Slider*>(but)->getVal();
 }
 
 void Program::eventGraphColorPickAlpha(Button* but) {
-	static_cast<ColorBox*>(World::scene()->getPopup()->getWidget(0))->color.a = static_cast<Slider*>(but)->getVal();
+	static_cast<ColorBox*>(static_cast<Layout*>(World::scene()->getPopup()->getWidget(4))->getWidget(0))->color.a = static_cast<Slider*>(but)->getVal();
 }
 
 void Program::eventGraphColorPickConfirm(Button* but) {
-	sizt id = static_cast<ProgFuncs*>(state.get())->getFuncID(static_cast<Widget*>(but->data));	// get fucntion id through data from ok button which is a pointer to the ColorBox that was clicked to open the color pick popup
+	sizt id = static_cast<Widget*>(but->data)->getParent()->getID();	// get fucntion id through data from ok button which is a pointer to the ColorBox that was clicked to open the color pick popup which's parent's id can be used as the funciton's id
+	funcs[id].color = static_cast<ColorBox*>(static_cast<Layout*>(World::scene()->getPopup()->getWidget(4))->getWidget(0))->color;
 
-	funcs[id].color = static_cast<ColorBox*>(World::scene()->getPopup()->getWidget(0))->color;
-	setState(new ProgFuncs);
+	World::scene()->setLayout(state->createLayout());
 }
 
 void Program::eventVarRename(Button* but) {
@@ -122,11 +119,11 @@ void Program::eventVarRename(Button* but) {
 }
 
 void Program::eventVarRevalue(Button* but) {
-	const string& key = static_cast<ProgVars*>(state.get())->getVarKey(but);
+	const string& key = static_cast<LineEdit*>(but->getParent()->getWidget(0))->getText();
 	double val = stod(static_cast<LineEdit*>(but)->getText());
 
 	vars[key] = val;
-	parser.updateVar(key, val);
+	parser.updateVars(vars);
 }
 
 void Program::eventOpenContextVariable(Button* but) {
@@ -134,41 +131,42 @@ void Program::eventOpenContextVariable(Button* but) {
 		Context::Item("Delete", &Program::eventDelVariable),
 		Context::Item("Add Variable", &Program::eventAddVariable)
 	};
-	World::scene()->setContext(new Context(but, items, World::winSys()->mousePos()));
+	World::scene()->setContext(new Context(but, items, WindowSys::mousePos()));
 }
 
 void Program::eventAddVariable(Context::Item* item) {
-	pair<string, double> var("a", 0.0);
-	sizt i = 0;
-	while (!wordValid(var.first)) {	// find name for new variable
-		if (var.first[i] == 'z')
-			var.first[i] = 'A';
-		else if (var.first[i] == 'Z') {
-			var.first += 'a';
-			i++;
-		} else
-			var.first[i]++;
+	string name = "a";
+	while (!wordValid(name)) {	// find name for new variable
+		if (name.back() == 'z')
+			name.back() = 'A';
+		else if (name.back() == 'Z')
+			name.back() = '_';
+		else if (name.back() == '_')
+			name += 'a';
+		else
+			name.back()++;
 	}
 
-	vars.insert(var);
-	parser.updateAddVar(var);
-	setState(new ProgVars);
+	vars.insert(make_pair(name, 0.f));
+	parser.updateVars(vars);
+	World::scene()->setLayout(state->createLayout());
 }
 
 void Program::eventDelVariable(Context::Item* item) {
-	const string& key = static_cast<ProgVars*>(state.get())->getVarKey(World::scene()->getContext()->getWidget());
+	const string& key = static_cast<LineEdit*>(World::scene()->getContext()->getWidget()->getParent()->getWidget(0))->getText();
 	vars.erase(key);
-	parser.updateDelVar(key);
+	parser.updateVars(vars);
 
-	setState(new ProgVars);
+	World::scene()->setLayout(state->createLayout());
 }
 
 void Program::eventGetYConfirm(Button* but) {
-	sizt fid = static_cast<ProgGraph*>(state.get())->getGraphView()->getLastClickedGraph()->fid;
-	const string& xstr = static_cast<LineEdit*>(World::scene()->getPopup()->getWidget(2))->getText();
-	string ystr = to_string(funcs[fid].solve(stod(xstr)));
+	sizt fid = static_cast<Graph*>(static_cast<GraphView*>(World::scene()->getLayout()->getWidget(1))->data)->fid;
+	const string& xstr = static_cast<LineEdit*>(World::scene()->getPopup()->getWidget(1))->getText();
 
-	World::scene()->setPopup(ProgState::createPopupMessage("Y at " + xstr + " is " + ystr, vec2<Size>(400, 100)));
+	ostringstream ss;
+	ss << "Y at " << xstr << " is " << funcs[fid].solve(stod(xstr));
+	World::scene()->setPopup(ProgState::createPopupMessage(ss.str(), vec2<Size>(400, 100)));
 }
 
 void Program::eventSettingResolution(Button* but) {
@@ -202,6 +200,11 @@ void Program::eventSettingRendererPick(Context::Item* item) {
 
 void Program::eventSettingScrollSpeed(Button* but) {
 	World::winSys()->setScrollSpeed(stoi(static_cast<LineEdit*>(but)->getText()));
+}
+
+void Program::eventSettingReset(Button* but) {
+	World::winSys()->resetSettings();
+	World::scene()->setLayout(state->createLayout());
 }
 
 void Program::setState(ProgState* newState) {

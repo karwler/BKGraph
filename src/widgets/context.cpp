@@ -27,12 +27,12 @@ bool Context::onClick(const vec2i& mPos, uint8 mBut) {
 	return inside;
 }
 
-void Context::setItems(const vector<Item>& newItems, int sizeX) {
-	size.x = sizeX;
+void Context::setItems(const vector<Item>& newItems, int minSize) {
+	size.x = minSize;
 	items.resize(newItems.size());
 	for (sizt i=0; i<items.size(); i++) {
 		items[i] = newItems[i];
-		int len = World::winSys()->getFontSet().textLength(items[i].text, Default::itemHeight) + Default::textOffset*2;
+		int len = World::winSys()->getFontSet().length(items[i].text, Default::itemHeight) + Default::textOffset*2;
 		if (len > size.x)
 			size.x = len;
 	}

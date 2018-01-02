@@ -5,9 +5,16 @@ Scene::Scene() :
 {}
 
 void Scene::onKeypress(const SDL_KeyboardEvent& key) {
-	if (LineEdit* le = dynamic_cast<LineEdit*>(capture))
+	if (key.keysym.scancode == Default::keyBack && !key.repeat) {	// close context or popup if back key is pressed
+		if (context)
+			context.reset();
+		else if (popup)
+			setPopup(nullptr);
+	}
+
+	if (LineEdit* le = dynamic_cast<LineEdit*>(capture))	// if capturing text input pass to the capturing widget
 		le->onKeypress(key.keysym);
-	else if (!key.repeat)
+	else if (!key.repeat)	// otherwise if key is pressed once let program state handle it
 		World::program()->getState()->eventKeypress(key.keysym);
 }
 
@@ -33,11 +40,13 @@ void Scene::onMouseUp(uint8 mBut) {
 }
 
 void Scene::onMouseWheel(int wMov) {
-	if (ScrollArea* box = getFocusedScrollArea())
-		box->scrollList(wMov * Default::scrollFactorWheel);
+	if (ScrollArea* box = getFocusedScrollArea())	// if mouse is over a ScrollArea scroll it
+		box->onScroll(wMov * Default::scrollFactorWheel);
+	else
+		focused.back()->onScroll(wMov);
 }
 
-void Scene::onText(const string& text) {
+void Scene::onText(const char* text) {
 	static_cast<LineEdit*>(capture)->onText(text);	// text input should only run if line edit is being captured, therefore a cast check shouldn't be necessary
 }
 
@@ -56,12 +65,13 @@ void Scene::setLayout(Layout* newLayout) {
 
 	// set stuff up
 	layout.reset(newLayout);
-	setFocused(World::winSys()->mousePos());
+	setFocused(WindowSys::mousePos());
 }
 
-void Scene::setPopup(Popup* newPopup) {
+void Scene::setPopup(Popup* newPopup, Widget* newCapture) {
 	popup.reset(newPopup);
-	setFocused(World::winSys()->mousePos());
+	setCapture(newCapture);
+	setFocused(WindowSys::mousePos());
 }
 
 void Scene::setContext(Context* newContext) {
@@ -114,9 +124,9 @@ void Scene::updateFocused(const vec2i& mPos) {
 void Scene::setFocusedElement(const vec2i& mPos, Layout* box) {
 	SDL_Rect frame = box->frame();
 	for (Widget* it : box->getWidgets())
-		if (inRect(mPos, overlapRect(it->rect(), frame))) {
+		if (inRect(mPos, overlapRect(it->rect(), frame))) {	// if mouse is over the widget append it
 			focused.push_back(it);
-			if (Layout* lay = dynamic_cast<Layout*>(it))
+			if (Layout* lay = dynamic_cast<Layout*>(it))	// if that widget is a layout check it's children
 				setFocusedElement(mPos, lay);
 			break;
 		}

@@ -44,7 +44,7 @@ TTF_Font* FontSet::getFont(int height) {
 	return (fonts.count(height) == 0) ? addSize(height) : fonts.at(height);	// load font if it hasn't been loaded yet
 }
 
-int FontSet::textLength(const string& text, int height) {
+int FontSet::length(const string& text, int height) {
 	int len = 0;
 	TTF_Font* font = getFont(height);
 	if (font)
@@ -54,26 +54,27 @@ int FontSet::textLength(const string& text, int height) {
 
 // SETTINGS
 
-Settings::Settings(bool MAX, bool FSC, const vec2i& RES, const vec2d& VPS, const vec2d& VSZ, const string& FNT, const string& RND, int SSP) :
+Settings::Settings(bool MAX, bool FSC, const vec2i& RES, const vec2f& VPS, const vec2f& VSZ, const string& RND, int SSP) :
 	maximized(MAX),
 	fullscreen(FSC),
 	resolution(RES),
 	viewPos(VPS),
 	viewSize(VSZ),
 	renderer(RND),
-	scrollSpeed(SSP),
-	font(FNT)
+	scrollSpeed(SSP)
 {}
 
-void Settings::initFont() {
+void Settings::setFont(const string& newFont) {
+	font = newFont;
 	if (!fontSet.init(Filer::findFont(font)))
 		font.clear();
 }
 
 string Settings::getResolutionString() const {
-	return to_string(resolution.x) + ' ' + to_string(resolution.y);
+	ostringstream ss;
+	ss << resolution.x << ' ' << resolution.y;
+	return ss.str();
 }
-
 
 void Settings::setResolution(const string& line) {
 	vector<vec2t> elems = getWords(line);
@@ -84,7 +85,9 @@ void Settings::setResolution(const string& line) {
 }
 
 string Settings::getViewportString() const {
-	return to_string(viewPos.x) + ' ' + to_string(viewPos.y) + ' ' + to_string(viewPos.x + viewSize.x) + ' ' + to_string(viewPos.y + viewSize.y);
+	ostringstream ss;
+	ss << viewPos.x << ' ' << viewPos.y << ' ' << viewPos.x + viewSize.x << ' ' << viewPos.y + viewSize.y;
+	return ss.str();
 }
 
 void Settings::setViewport(const string& line) {

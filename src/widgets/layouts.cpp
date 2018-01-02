@@ -2,61 +2,57 @@
 
 // LAYOUT
 
-Layout::Layout(const Size& SIZ, bool VRT, void* DAT) :
+Layout::Layout(const Size& SIZ, bool VRT, int SPC, void* DAT) :
 	Widget(SIZ, DAT),
-	vertical(VRT),
-	poss({0})
+	positions({0}),
+	spacing(SPC),
+	vertical(VRT)
 {}
 
 Layout::~Layout() {
-	for (Widget* it : wgts)
+	for (Widget* it : widgets)
 		delete it;
 }
 
 void Layout::drawSelf() {
-	for (Widget* it : wgts)
+	for (Widget* it : widgets)
 		it->drawSelf();
 }
 
 void Layout::onResize() {
 	// get amount of space for widgets with prc and get sum of widget's prc
-	float space = vertical ? size().y : size().x;
+	float space = (vertical ? size().y : size().x) - (widgets.size()-1) * spacing;
 	float total = 0;
-	for (Widget* it : wgts) {
-		if (it->getRelSize().usePix)
-			space -=  it->getRelSize().pix;
+	for (Widget* it : widgets) {
+		if (it->getRelSize().usePix())
+			space -=  it->getRelSize().getPix();
 		else
-			total += it->getRelSize().prc;
+			total += it->getRelSize().getPrc();
 	}
 
-	// calculate positions for each widget and set last poss element to end position of the last widget
+	// calculate positions for each widget and set last poss element to end position of the last widget + spacing
 	int pos = 0;
-	for (sizt i=0; i<wgts.size(); i++) {
-		poss[i] = pos;
-		pos += wgts[i]->getRelSize().usePix ? wgts[i]->getRelSize().pix : wgts[i]->getRelSize().prc * space / total;
+	for (sizt i=0; i<widgets.size(); i++) {
+		positions[i] = pos;
+		pos += (widgets[i]->getRelSize().usePix() ? widgets[i]->getRelSize().getPix() : widgets[i]->getRelSize().getPrc() * space / total) + spacing;
 	}
-	poss[wgts.size()] = pos;
+	positions.back() = widgets.empty() ? spacing : pos;
 
 	// do the same for children
-	for (Widget* it : wgts)
+	for (Widget* it : widgets)
 		it->onResize();
 }
 
-void Layout::setVertical(bool yes) {
-	vertical = yes;
-	onResize();
-}
-
-void Layout::setWidgets(const vector<Widget*>& widgets) {
-	for (Widget* it : wgts)	// get rid of previously existing widgets
+void Layout::setWidgets(const vector<Widget*>& wgts) {
+	for (Widget* it : widgets)	// get rid of previously existing widgets
 		delete it;
 	
-	wgts.resize(widgets.size());
-	poss.resize(widgets.size()+1);
+	widgets.resize(wgts.size());
+	positions.resize(wgts.size()+1);
 
-	for (sizt i=0; i<wgts.size(); i++) {
-		wgts[i] = widgets[i];
-		wgts[i]->setParent(this, i);
+	for (sizt i=0; i<widgets.size(); i++) {
+		widgets[i] = wgts[i];
+		widgets[i]->setParent(this, i);
 	}
 	onResize();
 }
@@ -75,18 +71,22 @@ SDL_Rect Layout::parentFrame() const {
 
 vec2i Layout::wgtPos(sizt id) const {
 	vec2i pos = position();
-	return vertical ? vec2i(pos.x, pos.y + poss[id]) : vec2i(pos.x + poss[id], pos.y);
+	return vertical ? vec2i(pos.x, pos.y + positions[id]) : vec2i(pos.x + positions[id], pos.y);
 }
 
 vec2i Layout::wgtSize(sizt id) const {
-	int rs = poss[id+1] - poss[id];
+	int rs = positions[id+1] - positions[id] - spacing;
 	return vertical ? vec2i(size().x, rs) : vec2i(rs, size().y);
+}
+
+int Layout::listS() const {
+	return positions.back() - spacing;
 }
 
 // SCROLL AREA
 
-ScrollArea::ScrollArea(const Size& SIZ, void* DAT) :
-	Layout(SIZ, true, DAT),
+ScrollArea::ScrollArea(const Size& SIZ, int SPC, void* DAT) :
+	Layout(SIZ, true, SPC, DAT),
 	listY(0)
 {}
 
@@ -117,6 +117,10 @@ void ScrollArea::onUndrag(uint8 mBut) {
 		World::scene()->setCapture(nullptr);
 }
 
+void ScrollArea::onScroll(int wMov) {
+	dragList(listY + wMov);
+}
+
 void ScrollArea::onResize() {
 	Layout::onResize();
 	bringIn(listY, 0, listL());
@@ -129,33 +133,6 @@ void ScrollArea::setSlider(int ypos) {
 void ScrollArea::dragList(int ypos) {
 	listY = ypos;
 	bringIn(listY, 0, listL());
-}
-
-void ScrollArea::scrollList(int ymov) {
-	dragList(listY + ymov);
-}
-
-int ScrollArea::barW() const {
-	return (sliderH() == size().y) ? 0 : Default::sliderWidth;
-}
-
-int ScrollArea::listL() const {
-	int sizY = size().y;
-	return (sizY < poss[wgts.size()]) ? poss[wgts.size()] - sizY : 0;
-}
-
-int ScrollArea::sliderY() const {
-	int sizY = size().y;
-	return (poss[wgts.size()] > sizY) ? position().y + listY * sliderL() / listL() : position().y;
-}
-
-int ScrollArea::sliderH() const {
-	int sizY = size().y;
-	return (sizY < poss[wgts.size()]) ? sizY * sizY / poss[wgts.size()] : sizY;
-}
-
-int ScrollArea::sliderL() const {
-	return size().y - sliderH();
 }
 
 vec2i ScrollArea::wgtPos(sizt id) const {
@@ -186,30 +163,51 @@ SDL_Rect ScrollArea::sliderRect() const {
 	return {position().x+size().x-bw, sliderY(), bw, sliderH()};
 }
 
-vec2t ScrollArea::visibleItems() const {
-	if (wgts.empty())	// nothing to draw
+vec2t ScrollArea::visibleWidgets() const {
+	if (widgets.empty())	// nothing to draw
 		return vec2t(1, 0);
 
-	vec2t interval(0, wgts.size()-1);
-	for (sizt i=interval.l; i<=interval.u; i++)
-		if (poss[i+1] >= listY) {
-			interval.l = i;
-			break;
-		}
-		
+	sizt first = 0;
+	while (first < widgets.size() && positions[first+1] - spacing < listY)
+		first++;
+
 	int end = listY + size().y;
-	for (sizt i=interval.l; i<=interval.u; i++)
-		if (poss[i+1] >= end) {
-			interval.u = i;
-			break;
-		}
-	return interval;
+	sizt last = first;
+	while (last < widgets.size() && positions[last] <= end)
+		last++;
+
+	return vec2t(first, last);
+}
+
+int ScrollArea::listL() const {
+	int sizY = size().y;
+	int lstS = listS();
+	return (sizY < lstS) ? lstS - sizY : 0;
+}
+
+int ScrollArea::sliderY() const {
+	int sizY = size().y;
+	return (listS() > sizY) ? position().y + listY * sliderL() / listL() : position().y;
+}
+
+int ScrollArea::sliderH() const {
+	int sizY = size().y;
+	int lstS = listS();
+	return (sizY < lstS) ? sizY * sizY / lstS : sizY;
+}
+
+int ScrollArea::sliderL() const {
+	return size().y - sliderH();
+}
+
+int ScrollArea::barW() const {
+	return (sliderH() == size().y) ? 0 : Default::sliderWidth;
 }
 
 // POPUP
 
-Popup::Popup(const vec2<Size>& SIZ, bool VRT, void* DAT) :
-	Layout(SIZ.x, VRT, DAT),
+Popup::Popup(const vec2<Size>& SIZ, bool VRT, int SPC, void* DAT) :
+	Layout(SIZ.x, VRT, SPC, DAT),
 	sizeY(SIZ.y)
 {}
 
@@ -223,5 +221,5 @@ vec2i Popup::position() const {
 
 vec2i Popup::size() const {
 	vec2f res = World::winSys()->resolution();
-	return vec2i(relSize.usePix ? relSize.pix : relSize.prc * res.x, sizeY.usePix ? sizeY.pix : sizeY.prc * res.y);
+	return vec2i(relSize.usePix() ? relSize.getPix() : relSize.getPrc() * res.x, sizeY.usePix() ? sizeY.getPix() : sizeY.getPrc() * res.y);
 }

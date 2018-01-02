@@ -2,6 +2,7 @@
 
 #include "drawSys.h"
 #include "scene.h"
+#include "prog/program.h"
 #include "utils/settings.h"
 
 // runs and kills everything, passes events, handles window events and contains settings
@@ -22,16 +23,17 @@ public:
 	Program* getProgram() { return program.get(); }
 
 	const Settings& getSettings() const { return sets; }
-	FontSet& getFontSet() { return sets.fontSet; }
+	FontSet& getFontSet() { return sets.getFontSet(); }
 	void setResolution(const vec2i& res);
 	void setResolution(const string& line);
-	void setViewPos(const vec2d& pos) { sets.viewPos = pos; }
-	void setViewSize(const vec2d& size) { sets.viewSize = size; }
+	void setViewPos(const vec2f& pos) { sets.viewPos = pos; }
+	void setViewSize(const vec2f& size) { sets.viewSize = size; }
 	void setViewport(const string& line);
 	void setRenderer(const string& name);
 	void setFullscreen(bool on);
 	void setFont(const string& font);
 	void setScrollSpeed(int ss) { sets.scrollSpeed = ss; }
+	void resetSettings();
 
 private:
 	uptr<Program> program;

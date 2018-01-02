@@ -32,19 +32,11 @@ struct vec2 {
 	{}
 	
 	T& operator[](char i) {
-		if (i == 0)
-			return x;
-		if (i == 1)
-			return y;
-		throw "out of range";
+		return reinterpret_cast<T*>(this)[i];
 	}
 
 	const T& operator[](char i) const {
-		if (i == 0)
-			return x;
-		if (i == 1)
-			return y;
-		throw "out of range";
+		return reinterpret_cast<T*>(this)[i];
 	}
 
 	vec2& operator=(const vec2& v) {
@@ -388,8 +380,8 @@ vec2<T> rotate(const vec2<T>& vec, const T& ang) {
 	return vec2<T>(vec.x * ca - vec.y * sa, vec.x * sa + vec.y * ca);
 }
 
-template <typename T>
-char intersect(vec2<T>& in, vec2<T>& im, const vec2<T>& ap, const vec2<T>& av, const vec2<T>& bp, const vec2<T>& bv) {	// return 0 if no intersection, 1 if lines intersect, 2 if lines overlap
+template <typename T>	// return 0 if no intersection, 1 if lines intersect, 2 if lines overlap
+char intersect(vec2<T>& in, vec2<T>& im, const vec2<T>& ap, const vec2<T>& av, const vec2<T>& bp, const vec2<T>& bv) {
 	vec2<T> dp = bp - ap;
 	T dt = cross(av, bv);
 	T ta = cross(dp, bv);

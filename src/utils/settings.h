@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "defaults.h"
+#include "prog/defaults.h"
 
 // loads different font sizes from one family
 class FontSet {
@@ -9,7 +9,7 @@ public:
 	void clear();
 
 	TTF_Font* getFont(int height);
-	int textLength(const string& text, int height);	// automaticall scales height so no need to call scaleTextHeight separately
+	int length(const string& text, int height);
 
 private:
 	float heightScale;	// for scaling down font size to fit requested height
@@ -20,22 +20,26 @@ private:
 };
 
 // settings I guess?
-struct Settings {
-	Settings(bool MAX=Default::maximized, bool FSC=Default::fullscreen, const vec2i& RES=Default::resolution, const vec2d& VPS=Default::viewportPosition, const vec2d& VSZ=Default::viewportSize, const string& FNT=Default::font, const string& RND="", int SSP=Default::scrollSpeed);
+class Settings {
+public:
+	Settings(bool MAX=Default::maximized, bool FSC=Default::fullscreen, const vec2i& RES=Default::resolution, const vec2f& VPS=Default::viewportPosition, const vec2f& VSZ=Default::viewportSize, const string& RND="", int SSP=Default::scrollSpeed);
 
-	bool maximized, fullscreen;
-	vec2i resolution;
-	vec2d viewPos, viewSize;
-	string renderer;
-	int scrollSpeed;
+	const string& getFont() const { return font; }
+	FontSet& getFontSet() { return fontSet; }
+	void setFont(const string& newFont=Default::font);
 
-	string font;
-	FontSet fontSet;
-
-	void initFont();
 	string getResolutionString() const;
 	void setResolution(const string& line);
 	string getViewportString() const;
 	void setViewport(const string& line);
-	int getRenderDriverIndex();
+	int getRenderDriverIndex();		// sets renderer name to first found renderer if no matching name was found
+
+	bool maximized, fullscreen;
+	vec2i resolution;
+	vec2f viewPos, viewSize;
+	string renderer;
+	int scrollSpeed;
+private:
+	string font;	// needs to be set outisde of constructor
+	FontSet fontSet;
 };

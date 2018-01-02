@@ -39,20 +39,20 @@ void DrawSys::drawWidgets() {
 
 void DrawSys::drawCheckBox(CheckBox* wgt) {
 	SDL_Rect frame = wgt->parentFrame();
-	drawRect(overlapRect(wgt->rect(), frame), Default::colorNormal);	// draw background
+	drawRect(overlapRect(wgt->rect(), frame), Default::colorNormal);									// draw background
 	drawRect(overlapRect(wgt->boxRect(), frame), wgt->on ? Default::colorLight : Default::colorDark);	// draw checkbox
 }
 
 void DrawSys::drawColorBox(ColorBox* wgt) {
 	SDL_Rect frame = wgt->parentFrame();
 	drawRect(overlapRect(wgt->rect(), frame), Default::colorNormal);	// draw background
-	drawRect(overlapRect(wgt->boxRect(), frame), wgt->color);	// draw colorbox
+	drawRect(overlapRect(wgt->boxRect(), frame), wgt->color);			// draw colorbox
 }
 
 void DrawSys::drawSlider(Slider* wgt) {
 	SDL_Rect frame = wgt->parentFrame();
-	drawRect(overlapRect(wgt->rect(), frame), Default::colorNormal);	// draw background
-	drawRect(overlapRect(wgt->barRect(), frame), Default::colorDark);	// draw bar
+	drawRect(overlapRect(wgt->rect(), frame), Default::colorNormal);		// draw background
+	drawRect(overlapRect(wgt->barRect(), frame), Default::colorDark);		// draw bar
 	drawRect(overlapRect(wgt->sliderRect(), frame), Default::colorLight);	// draw slider
 }
 
@@ -64,7 +64,7 @@ void DrawSys::drawLabel(Label* wgt) {
 	// modify frame and draw text if exists
 	if (!wgt->getText().empty()) {
 		rect.x += Default::textOffset;
-		rect.w -= Default::textOffset*2;
+		rect.w -= Default::textOffset * 2;
 		drawText(wgt->getText(), wgt->textPos(), wgt->size().y, Default::colorText, rect);
 	}
 }
@@ -73,6 +73,13 @@ void DrawSys::drawGraphView(GraphView* wgt) {
 	vec2i pos = wgt->position();
 	vec2i siz = wgt->size();
 	int endy = pos.y + siz.y;
+
+	// draw lines
+	vec2i lstt = vec2i(dotToPix(vec2f(World::winSys()->getSettings().viewPos.x, 0.f), World::winSys()->getSettings().viewPos, World::winSys()->getSettings().viewSize, vec2f(siz))) + pos;
+	drawLine(lstt, vec2i(lstt.x + siz.x - 1, lstt.y), Default::colorGraph, {pos.x, pos.y, siz.x, siz.y});
+
+	lstt = vec2i(dotToPix(vec2f(0.f, World::winSys()->getSettings().viewPos.y), World::winSys()->getSettings().viewPos, World::winSys()->getSettings().viewSize, vec2f(siz))) + pos;
+	drawLine(lstt, vec2i(lstt.x, lstt.y + siz.y - 1), Default::colorGraph, {pos.x, pos.y, siz.x, siz.y});
 
 	// draw graphs
 	for (const Graph& it : wgt->getGraphs()) {
@@ -93,24 +100,17 @@ void DrawSys::drawGraphView(GraphView* wgt) {
 		if (lastIn)
 			SDL_RenderDrawLines(renderer, &it.pixs[start], it.pixs.size()-start);
 	}
-	
-	// draw lines
-	vec2i lstt = vec2i(dotToPix(vec2d(World::winSys()->getSettings().viewPos.x, 0.0), World::winSys()->getSettings().viewPos, World::winSys()->getSettings().viewSize, vec2d(siz))) + pos;
-	drawLine(lstt, vec2i(lstt.x + siz.x - 1, lstt.y), Default::colorGraph, {pos.x, pos.y, siz.x, siz.y});
-
-	lstt = vec2i(dotToPix(vec2d(0.0, World::winSys()->getSettings().viewPos.y), World::winSys()->getSettings().viewPos, World::winSys()->getSettings().viewSize, vec2d(siz))) + pos;
-	drawLine(lstt, vec2i(lstt.x, lstt.y + siz.y - 1), Default::colorGraph, {pos.x, pos.y, siz.x, siz.y});
 }
 
 void DrawSys::drawScrollArea(ScrollArea* box) {
-	vec2t interval = box->visibleItems();	// get index interval of items on screen and draw children
-	for (sizt i=interval.l; i<=interval.u; i++)
+	// get index interval of items on screen and draw children
+	vec2t vis = box->visibleWidgets();
+	for (sizt i=vis.l; i<vis.u; i++)
 		box->getWidget(i)->drawSelf();
 
 	// draw scroll bar
-	SDL_Rect frame = box->frame();
-	drawRect(overlapRect(box->barRect(), frame), Default::colorDark);
-	drawRect(overlapRect(box->sliderRect(), frame), Default::colorLight);
+	drawRect(box->barRect(), Default::colorDark);
+	drawRect(box->sliderRect(), Default::colorLight);
 }
 
 void DrawSys::drawPopup(Popup* pop) {

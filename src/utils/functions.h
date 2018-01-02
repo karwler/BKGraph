@@ -1,11 +1,10 @@
 #pragma once
 
-#include "utils/defaults.h"
+#include "prog/defaults.h"
 
+// element used to calculate Y for X in Function
 class Subfunction {
 public:
-	virtual ~Subfunction() {}
-
 	virtual double solve() const = 0;
 };
 
@@ -51,6 +50,7 @@ private:
 	string var;
 };
 
+// stores funciton data and calculates Y for the corresponding X
 class Function {
 public:
 	Function(bool SHW=true, const string& TXT="", SDL_Color CLR=Default::colorGraph);

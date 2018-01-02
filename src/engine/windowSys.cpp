@@ -15,7 +15,7 @@ int WindowSys::start() {
 			throw "couldn't initialize PNGs\n" + string(IMG_GetError());
 		if (TTF_Init())
 			throw "couldn't initialize fonts\n" + string(SDL_GetError());
-		
+
 		sets = Filer::loadSettings();
 		createWindow();
 		scene.reset(new Scene());
@@ -66,7 +66,7 @@ void WindowSys::createWindow() {
 		flags |= SDL_WINDOW_MAXIMIZED;
 	if (sets.fullscreen)
 		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-	
+
 	window = SDL_CreateWindow(Default::windowTitle, Default::windowPos.x, Default::windowPos.y, sets.resolution.x, sets.resolution.y, flags);
 	if (!window)
 		throw "couldn't create window\n" + string(SDL_GetError());
@@ -154,7 +154,7 @@ vector<string> WindowSys::getAvailibleRenderers() {
 
 void WindowSys::setResolution(const vec2i& res) {
 	sets.resolution = res;
-	SDL_SetWindowSize(window, res.x, res.y);
+	SDL_SetWindowSize(window, sets.resolution.x, sets.resolution.y);
 }
 
 void WindowSys::setResolution(const string& line) {
@@ -177,6 +177,11 @@ void WindowSys::setFullscreen(bool on) {
 }
 
 void WindowSys::setFont(const string& font) {
-	sets.font = font;
-	sets.initFont();
+	sets.setFont(font);
+}
+
+void WindowSys::resetSettings() {
+	sets = Settings();
+	sets.setFont(Default::font);
+	createWindow();
 }

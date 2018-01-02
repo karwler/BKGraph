@@ -2,210 +2,41 @@
 #include <locale>
 #include <codecvt>
 
-bool strcmpCI(const string& strl, const string& strr) {
+bool strcmpCI(const string& sa, const string& sb) {
 	sizt i = 0;
 	do {
-		if (tolower(strl[i]) != tolower(strr[i]))
+		if (tolower(sa[i]) != tolower(sb[i]))
 			return false;
-	} while (strl[i++] != '\0');
+	} while (sa[i++] != '\0');
 	return true;
-}
-
-bool findChar(const string& str, char c) {
-	for (sizt i=0; i<str.length(); i++)
-		if (str[i] == c)
-			return true;
-	return false;
-}
-
-bool findChar(const string& str, char c, sizt& id) {
-	for (id=0; id<str.length(); id++)
-		if (str[id] == c)
-			return true;
-	return false;
 }
 
 vector<vec2t> getWords(const string& line, char spacer) {
 	sizt i = 0;
-	while (line[i] == spacer)
+	while (line[i] == spacer)	// skip initial spaces
 		i++;
 
-	sizt start = i;
+	sizt start = i;	// beginning of next word
 	vector<vec2t> words;
 	while (i < line.length()) {
-		if (line[i] == spacer) {
+		if (line[i] == spacer) {	// end of word
 			words.push_back(vec2t(start, i-start));
-			while (line[++i] == spacer);
+			while (line[++i] == spacer);	// skip spaces before next word/end of line
 			start = i;
 		} else
 			i++;
 	}
-	if (start < i)
+	if (start < i)	// add last word
 		words.push_back(vec2t(start, i-start));
 	return words;
 }
 
-sizt jumpToWordStart(const string& str, sizt i, char splitter) {
-	if (str[i] != splitter && i > 0 && str[i-1] == splitter)	// skip if first letter of word
-		i--;
-	while (str[i] == splitter && i > 0)	// skip first spaces
-		i--;
-	while (str[i] != splitter && i > 0)	// skip word
-		i--;
-	return (i == 0) ? i : i+1;	// correct position if necessary
-}
-
-sizt jumpToWordEnd(const string& str, sizt i, char splitter) {
-	while (str[i] == splitter && i < str.length())	// skip first spaces
-		i++;
-	while (str[i] != splitter && i < str.length())	// skip word
-		i++;
-	return i;
-}
-
-void cleanString(string& str, TextType type) {
-	if (type == TextType::sInteger)
-		cleanSIntString(str);
-	else if (type == TextType::sIntegerSpaced)
-		cleanSIntSpacedString(str);
-	else if (type == TextType::uInteger)
-		cleanUIntString(str);
-	else if (type == TextType::uIntegerSpaced)
-		cleanUIntSpacedString(str);
-	else if (type == TextType::sFloating)
-		cleanSFloatString(str);
-	else if (type == TextType::sFloatingSpaced)
-		cleanSFloatSpacedString(str);
-	else if (type == TextType::uFloating)
-		cleanUFloatString(str);
-	else if (type == TextType::uFloatingSpaced)
-		cleanUFloatSpacedString(str);
-	else if (type == TextType::function)
-		cleanFunctionString(str);
-}
-
-void cleanSIntString(string& str) {
-	cleanUIntString(str, (str[0] == '-') ? 1 : 0);
-}
-
-void cleanSIntSpacedString(string& str, sizt i) {
-	while (str[i] == ' ')
-		i++;
-	if (str[i] == '-')
-		i++;
-
-	while (i < str.length()) {
-		if (isDigit(str[i]))
-			i++;
-		else if (str[i] == ' ') {
-			cleanSIntSpacedString(str, i+1);
-			break;
-		} else
-			str.erase(i);
-	}
-}
-
-void cleanUIntString(string& str, sizt i) {
-	while (i < str.length()) {
-		if (isDigit(str[i]))
-			i++;
-		else
-			str.erase(i);
-	}
-}
-
-void cleanUIntSpacedString(string& str) {
-	sizt i = 0;
-	while (str[i] == ' ')
-		i++;
-
-	while (i < str.length()) {
-		if (isDigit(str[i]))
-			i++;
-		else if (str[i] == ' ')
-			while (str[++i] == ' ');
-		else
-			str.erase(i);
-	}
-}
-
-void cleanSFloatString(string& str) {
-	cleanUFloatString(str, (str[0] == '-') ? 1 : 0);
-}
-
-void cleanSFloatSpacedString(string& str, sizt i) {
-	while (str[i] == ' ')
-		i++;
-	if (str[i] == '-')
-		i++;
-
-	bool foundDot = false;
-	while (i < str.length()) {
-		if (isDigit(str[i]))
-			i++;
-		else if (str[i] == '.' && !foundDot) {
-			foundDot = true;
-			i++;
-		} else if (str[i] == ' ') {
-			cleanSFloatSpacedString(str, i+1);
-			break;
-		} else
-			str.erase(i);
-	}
-}
-
-void cleanUFloatString(string& str, sizt i) {
-	bool foundDot = false;
-	while (i < str.length()) {
-		if (isDigit(str[i]))
-			i++;
-		else if (str[i] == '.' && !foundDot) {
-			foundDot = true;
-			i++;
-		} else
-			str.erase(i);
-	}
-}
-
-void cleanUFloatSpacedString(string& str) {
-	sizt i = 0;
-	while (str[i] == ' ')
-		i++;
-
-	bool foundDot = false;
-	while (i < str.length()) {
-		if (isDigit(str[i]))
-			i++;
-		else if (str[i] == '.' && !foundDot) {
-			foundDot = true;
-			i++;
-		} else if (str[i] == ' ') {
-			while (str[++i] == ' ');
-			foundDot = false;
-		} else
-			str.erase(i);
-	}
-}
-
-void cleanFunctionString(string& str) {
-	for (sizt i=0; i<str.length();) {
-		if (isNumber(str[i]) || isLetter(str[i]) || isOperator(str[i]) || str[i] == '(' || str[i] == ')')
-			i++;
-		else
-			str.erase(i);
-	}
-}
-
 bool isAbsolute(const string& path) {
-	if (path.empty())
-		return false;
-	return path[0] == dsep || (path.length() >= 3 && isCapitalLetter(path[0]) && path[1] == ':' && path[2] == dsep);
+	return (path.length() >= 1 && path[0] == dsep) || (path.length() >= 3 && isCapitalLetter(path[0]) && path[1] == ':' && path[2] == dsep);
 }
 
 string appendDsep(const string& path) {
-	if (path.empty())
-		return string(1, dsep);
-	return (path.back() == dsep) ? path : path + dsep;
+	return path.empty() ? string(1, dsep) : (path.back() == dsep) ? path : path + dsep;
 }
 
 bool isDriveLetter(const string& path) {
@@ -213,8 +44,7 @@ bool isDriveLetter(const string& path) {
 }
 
 string parentDir(const string& path) {
-	sizt start = (path[path.length()-1] == dsep) ? path.length()-2 : path.length()-1;
-	for (sizt i=start; i!=SIZE_MAX; i--)
+	for (sizt i=path.length() - ((path.back()==dsep) ? 2 : 1); i!=SIZE_MAX; i--)
 		if (path[i] == dsep)
 			return path.substr(0, i+1);
 	return path;
@@ -228,10 +58,23 @@ string filename(const string& path) {
 }
 
 string extension(const string& path) {
-	for (sizt i=path.length()-1; i!=SIZE_MAX; i--)
+	for (sizt i=path.length()-1; i!=SIZE_MAX; i--) {
 		if (path[i] == '.')
 			return path.substr(i+1);
+		else if (path[i] == dsep)
+			return "";
+	}
 	return "";
+}
+
+bool hasExtension(const string& path) {
+	for (sizt i=path.length()-1; i!=SIZE_MAX; i--) {
+		if (path[i] == '.')
+			return true;
+		else if (path[i] == dsep)
+			return false;
+	}
+	return false;
 }
 
 bool hasExtension(const string& path, const string& ext) {
@@ -246,9 +89,12 @@ bool hasExtension(const string& path, const string& ext) {
 }
 
 string delExtension(const string& path) {
-	for (sizt i=path.length()-1; i!=SIZE_MAX; i--)
+	for (sizt i=path.length()-1; i!=SIZE_MAX; i--) {
 		if (path[i] == '.')
 			return path.substr(0, i);
+		else if (path[i] == dsep)
+			return path;
+	}
 	return path;
 }
 
@@ -324,23 +170,36 @@ SDL_Rect overlapRect(SDL_Rect rect, const SDL_Rect& frame)  {
 	return rect;
 }
 
-bool cropLine(vec2i& pos, vec2i& end, const SDL_Rect& frame) {
-	vec2i fend = rectEnd(frame);
-	vec2f dots[5] = {
-		vec2f(frame.x, frame.y),
-		vec2f(fend.x, frame.y),
-		vec2f(fend.x, fend.y),
-		vec2f(frame.x, fend.y),
-		vec2f(frame.x, frame.y)
+bool cropLine(vec2i& pos, vec2i& end, const SDL_Rect& rect) {
+	if (rect.w <= 0 || rect.h <= 0)	// not dealing with that shit
+		return false;
+
+	vec2f dots[5] = {	// start/end points of rect's lines
+		vec2f(rect.x, rect.y),
+		vec2f(rect.x+rect.w-1, rect.y),
+		vec2f(rect.x+rect.w-1, rect.y+rect.h-1),
+		vec2f(rect.x, rect.y+rect.h-1),
+		vec2f(rect.x, rect.y)
 	};
-	
 	vec2f vec = end - pos;
-	vec2f ins[2];
-	uint8 hits = 0;
-	for (uint8 i=0; i<4 && hits<2; i++)
+	vec2f ins[3];	// points of intersections
+	uint8 hits = 0;	// number of found intersections (there shouldn't be more than 3)
+	for (uint8 i=0; i<4 && hits<3; i++)	// check rect's lines (no need to check for more than 3 hits)
 		hits += intersect(ins[hits], ins[hits+1], vec2f(pos), vec, dots[i], dots[i+1]-dots[i]);
 
-	pos = ins[0];
-	end = ins[1];
-	return hits == 2;
+	if (hits == 0)
+		return inRect(pos, rect) && inRect(end, rect);	// if line is inside of rect
+	if (hits == 1 || (hits == 2 && ins[0] == ins[1])) {	// one intersection (line might be crossing corner)
+		if (inRect(pos, rect))	// one point has to be inside so set the other one to the intersection
+			end = ins[0];
+		else
+			pos = ins[0];
+		return true;
+	}
+	if (hits == 2 || hits == 3) {	// two separate intersections or overlapping lines (might be 3 hits if line crosses a corner)
+		pos = ins[0];
+		end = ins[hits-1];
+		return true;
+	}
+	return false;
 }

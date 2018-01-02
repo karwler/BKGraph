@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils/utils.h"
+#include "prog/defaults.h"
 
 // context menu for right click
 class Context {
@@ -14,16 +14,15 @@ public:
 
 	Context(Widget* WGT=nullptr, const vector<Item>& ITMS={}, const vec2i& POS=0, const vec2i& SIZ=vec2i(0, Default::itemHeight));
 
-	bool onClick(const vec2i& mPos, uint8 mBut);	// returns if click was inside the context menu box
+	bool onClick(const vec2i& mPos, uint8 mBut);	// returns whether click was inside the context menu box
 
 	const vec2i getSize() const { return size; }
 	int height() const { return size.y * items.size(); }
 	SDL_Rect rect() const { return {position.x, position.y, size.x, height()}; }
 
 	Widget* getWidget() const { return widget; }
-	Item* item(sizt id) { return &items[id]; }
 	const vector<Item>& getItems() const { return items; }
-	void setItems(const vector<Item>& newItems, int sizeX=0);
+	void setItems(const vector<Item>& newItems, int minSize=0);
 	vec2i itemPos(sizt id) const;
 
 	vec2i position;

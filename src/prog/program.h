@@ -52,6 +52,7 @@ public:
 	void eventSettingRendererOpen(Button* but);
 	void eventSettingRendererPick(Context::Item* item);
 	void eventSettingScrollSpeed(Button* but);
+	void eventSettingReset(Button* but);
 
 	// other stuff
 	ProgState* getState() { return state.get(); }
@@ -67,5 +68,5 @@ private:
 	vector<Function> funcs;
 	map<string, double> vars;
 
-	bool wordValid(const string& str);
+	bool wordValid(const string& str);	// checks if str can be used as a variable name
 };
