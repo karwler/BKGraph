@@ -103,7 +103,7 @@ void Program::eventGraphColorPickAlpha(Button* but) {
 void Program::eventGraphColorPickConfirm(Button* but) {
 	sizt id = static_cast<Widget*>(but->data)->getParent()->getID();	// get fucntion id through data from ok button which is a pointer to the ColorBox that was clicked to open the color pick popup which's parent's id can be used as the funciton's id
 	funcs[id].color = static_cast<ColorBox*>(static_cast<Layout*>(World::scene()->getPopup()->getWidget(4))->getWidget(0))->color;
-
+	
 	World::scene()->resetLayout();
 }
 
@@ -145,9 +145,9 @@ void Program::eventAddVariable(ContextItem* item) {
 		else
 			name.back()++;
 	}
-
 	vars.insert(make_pair(name, 0.f));
 	parser.updateVars(vars);
+	
 	World::scene()->resetLayout();
 }
 

@@ -59,6 +59,7 @@ void Scene::onResize() {
 void Scene::resetLayout() {
 	// clear scene
 	World::drawSys()->clearFonts();
+	focused.clear();
 	capture = nullptr;
 	popup.reset();
 	context.reset();
@@ -72,13 +73,12 @@ void Scene::resetLayout() {
 void Scene::setPopup(Popup* newPopup, Widget* newCapture) {
 	context.reset();
 	popup.reset(newPopup);
-	popup->postInit();
+	if (popup)
+		popup->postInit();
 
 	capture = newCapture;
-	if (dynamic_cast<LineEdit*>(capture))
-		SDL_StartTextInput();
-	else
-		SDL_StopTextInput();
+	if (capture)
+		capture->onClick(WindowSys::mousePos(), SDL_BUTTON_LEFT);
 	
 	setFocused(WindowSys::mousePos());
 }
