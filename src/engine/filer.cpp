@@ -1,5 +1,4 @@
 #include "filer.h"
-#include "utils/utils.h"
 #include <fstream>
 #include <algorithm>
 #ifdef _WIN32
@@ -10,20 +9,76 @@
 #include <sys/stat.h>
 #endif
 
+// SETTINGS
+
+Settings::Settings(bool MAX, bool FSC, const vec2i& RES, const vec2f& VPS, const vec2f& VSZ, const string& FNT, const string& RND, int SSP) :
+	maximized(MAX),
+	fullscreen(FSC),
+	resolution(RES),
+	viewPos(VPS),
+	viewSize(VSZ),
+	renderer(RND),
+	scrollSpeed(SSP),
+	font(FNT)
+{}
+
+string Settings::getResolutionString() const {
+	ostringstream ss;
+	ss << resolution.x << ' ' << resolution.y;
+	return ss.str();
+}
+
+void Settings::setResolution(const string& line) {
+	vector<vec2t> elems = getWords(line);
+	if (elems.size() >= 1)
+		resolution.x = stoi(line.substr(elems[0].l, elems[0].u));
+	if (elems.size() >= 2)
+		resolution.y = stoi(line.substr(elems[1].l, elems[1].u));
+}
+
+string Settings::getViewportString() const {
+	ostringstream ss;
+	ss << viewPos.x << ' ' << viewPos.y << ' ' << viewPos.x + viewSize.x << ' ' << viewPos.y + viewSize.y;
+	return ss.str();
+}
+
+void Settings::setViewport(const string& line) {
+	vector<vec2t> elems = getWords(line);
+	if (elems.size() >= 1)
+		viewPos.x = stod(line.substr(elems[0].l, elems[0].u));
+	if (elems.size() >= 2)
+		viewPos.y = stod(line.substr(elems[1].l, elems[1].u));
+	if (elems.size() >= 3)
+		viewSize.x = stod(line.substr(elems[2].l, elems[2].u)) - viewPos.x;
+	if (elems.size() >= 4)
+		viewSize.y = stod(line.substr(elems[3].l, elems[3].u)) - viewPos.y;
+}
+
+int Settings::getRendererIndex() {
+	// get index of currently selected renderer
+	for (int i=0; i<SDL_GetNumRenderDrivers(); i++)
+		if (getRendererName(i) == renderer)
+			return i;
+
+	// if name doesn't match, choose the first renderer
+	renderer = getRendererName(0);
+	return 0;
+}
+
 // INI LINE
 
 IniLine::IniLine() :
-	type(Type::av) 
+	type(Type::empty)
 {}
 
 IniLine::IniLine(const string& ARG, const string& VAL) :
-	type(Type::av),
+	type(Type::argVal),
 	arg(ARG),
 	val(VAL) 
 {}
 
 IniLine::IniLine(const string& ARG, const string& KEY, const string& VAL) :
-	type(Type::akv),
+	type(Type::argKeyVal),
 	arg(ARG),
 	key(KEY),
 	val(VAL) 
@@ -35,22 +90,24 @@ IniLine::IniLine(const string& TIT) :
 {}
 
 string IniLine::line() const {
-	if (type == Type::av)
+	if (type == Type::argVal)
 		return arg + '=' + val;
-	if (type == Type::akv)
+	if (type == Type::argKeyVal)
 		return arg + '[' + key + "]=" + val;
-	return '[' + arg + ']';
+	if (type == Type::title)
+		return '[' + arg + ']';
+	return "";
 }
 
 void IniLine::setVal(const string& ARG, const string& VAL) {
-	type = Type::av;
+	type = Type::argVal;
 	arg = ARG;
 	key.clear();
 	val = VAL;
 }
 
-void IniLine::setVal(const std::string& ARG, const std::string& KEY, const std::string& VAL) {
-	type = Type::akv;
+void IniLine::setVal(const string& ARG, const string& KEY, const string& VAL) {
+	type = Type::argKeyVal;
 	arg = ARG;
 	key = KEY;
 	val = VAL;
@@ -63,35 +120,41 @@ void IniLine::setTitle(const string& TIT) {
 	val.clear();
 }
 
-bool IniLine::setLine(const string& lin) {
+bool IniLine::setLine(const string& str) {
+	// clear line in case the function will return false
+	clear();
+	if (str.empty())
+		return false;
+
 	// check if title
-	if (lin[0] == '[' && lin[lin.length()-1] == ']') {
-		arg = lin.substr(1, lin.length()-2);
+	if (str[0] == '[' && str.back() == ']') {
+		arg = str.substr(1, str.length()-2);
 		type = Type::title;
 		return true;
 	}
 
-	// find position of the = to split line into argument and value
-	sizt i0;;
-	if (!findChar(lin, '=', i0))
+	// find position of the '=' to split line into argument and value
+	sizt i0 = str.find_first_of('=');
+	if (i0 == string::npos)
 		return false;
+	val = str.substr(i0+1);
 
-	val = lin.substr(i0 + 1);
-	string left = lin.substr(0, i0);
-
-	// get key if availible
-	sizt i1 = 0, i2 = 0;
-	type = (findChar(left, '[', i1) && findChar(left, ']', i2)) ? Type::akv : Type::av;
-	if (type == Type::akv && i1 < i2) {
-		arg = lin.substr(0, i1);
-		key = lin.substr(i1+1, i2-i1-1);
-	} else
-		arg = left;
+	// get arg and key if availible
+	sizt i1 = str.find_first_of('[');
+	sizt i2 = str.find_first_of(']', i1);
+	if (i1 < i2 && i2 < i0) {	// if '[' preceeds ']' and both preceed '='
+		arg = str.substr(0, i1);
+		key = str.substr(i1+1, i2-i1-1);
+		type = Type::argKeyVal;
+	} else {
+		arg = str.substr(0, i0);
+		type = Type::argVal;
+	}
 	return true;
 }
 
 void IniLine::clear() {
-	type = Type::av;
+	type = Type::empty;
 	arg.clear();
 	val.clear();
 	key.clear();
@@ -109,33 +172,30 @@ const vector<string> Filer::dirFonts = {Filer::dirExec, "/usr/share/fonts/", str
 Settings Filer::loadSettings() {
 	Settings sets;
 	vector<string> lines;
-	if (!readTextFile(dirExec + Default::fileSettings, lines, false)) {	// if file not availible return default settings
-		sets.initFont();
+	if (!readTextFile(dirExec + Default::fileSettings, lines))	// if file not readable return default settings
 		return sets;
-	}
 
 	// read settings file's lines
 	for (string& line : lines) {
 		IniLine il;
-		if (!il.setLine(line) || il.type == IniLine::Type::title)
+		if (!il.setLine(line) || il.getType() == IniLine::Type::title)
 			continue;
 
-		if (il.arg == Default::iniKeywordFont)
-			sets.font = il.val;
-		else if (il.arg == Default::iniKeywordRenderer)
-			sets.renderer = il.val;
-		else if (il.arg == Default::iniKeywordMaximized)
-			sets.maximized = stob(il.val);
-		else if (il.arg == Default::iniKeywordFullscreen)
-			sets.fullscreen = stob(il.val);
-		else if (il.arg == Default::iniKeywordResolution)
-			sets.setResolution(il.val);
-		else if (il.arg == Default::iniKeywordViewport)
-			sets.setViewport(il.val);
-		else if (il.arg == Default::iniKeywordScrollSpeed)
-			sets.scrollSpeed = stoi(il.val);
+		if (il.getArg() == Default::iniKeywordFont)
+			sets.font = il.getVal();
+		else if (il.getArg() == Default::iniKeywordRenderer)
+			sets.renderer = il.getVal();
+		else if (il.getArg() == Default::iniKeywordMaximized)
+			sets.maximized = stob(il.getVal());
+		else if (il.getArg() == Default::iniKeywordFullscreen)
+			sets.fullscreen = stob(il.getVal());
+		else if (il.getArg() == Default::iniKeywordResolution)
+			sets.setResolution(il.getVal());
+		else if (il.getArg() == Default::iniKeywordViewport)
+			sets.setViewport(il.getVal());
+		else if (il.getArg() == Default::iniKeywordScrollSpeed)
+			sets.scrollSpeed = stoi(il.getVal());
 	}
-	sets.initFont();
 	return sets;
 }
 
@@ -147,7 +207,7 @@ void Filer::saveSettings(const Settings& sets) {
 		IniLine(Default::iniKeywordFullscreen, btos(sets.fullscreen)).line(),
 		IniLine(Default::iniKeywordResolution, sets.getResolutionString()).line(),
 		IniLine(Default::iniKeywordViewport, sets.getViewportString()).line(),
-		IniLine(Default::iniKeywordScrollSpeed, to_string(sets.scrollSpeed)).line()
+		IniLine(Default::iniKeywordScrollSpeed, ntos(sets.scrollSpeed)).line()
 	};
 	writeTextFile(dirExec + Default::fileSettings, lines);
 }
@@ -155,20 +215,20 @@ void Filer::saveSettings(const Settings& sets) {
 vector<Function> Filer::loadUsers(map<string, double>& vars) {
 	vector<Function> funcs;
 	vector<string> lines;
-	if (!readTextFile(dirExec + Default::fileUsers, lines, false))	// if file not availibe return empty vector
+	if (!readTextFile(dirExec + Default::fileUsers, lines))	// if file not readable return empty vector
 		return funcs;
 
 	// read file's lines
 	for (string& line : lines) {
 		IniLine il;
-		if (!il.setLine(line) || il.type == IniLine::Type::title)
+		if (!il.setLine(line) || il.getType() == IniLine::Type::title)
 			continue;
 
-		if (il.arg == Default::iniKeywordVariable) {
-			if (!vars.count(il.key))	// no variables with same name
-				vars.insert(make_pair(il.key, stod(il.val)));
-		} else if (il.arg == Default::iniKeywordFunction)
-			funcs.push_back(Function(il.val));
+		if (il.getArg() == Default::iniKeywordVariable) {
+			if (!vars.count(il.getKey()))	// no variables with same name
+				vars.insert(make_pair(il.getKey(), stod(il.getVal())));
+		} else if (il.getArg() == Default::iniKeywordFunction)
+			funcs.push_back(Function(il.getVal()));
 	}
 	return funcs;
 }
@@ -176,25 +236,24 @@ vector<Function> Filer::loadUsers(map<string, double>& vars) {
 void Filer::saveUsers(const vector<Function>& funcs, const map<string, double>& vars) {
 	vector<string> lines;
 	for (const pair<string, double>& it : vars)
-		lines.push_back(IniLine(Default::iniKeywordVariable, it.first, to_string(it.second)).line());
+		lines.push_back(IniLine(Default::iniKeywordVariable, it.first, ntos(it.second)).line());
 
-	for (const Function& it : funcs)
-		lines.push_back(IniLine(Default::iniKeywordFunction, btos(it.show) + ' ' + to_string(short(it.color.r)) + ' ' + to_string(short(it.color.g)) + ' ' + to_string(short(it.color.b)) + ' ' + to_string(short(it.color.a)) + ' ' + it.text).line());
+	for (const Function& it : funcs) {
+		ostringstream ss;
+		ss << btos(it.show) << ' ' << short(it.color.r) << ' ' << short(it.color.g) << ' ' << short(it.color.b) << ' ' << short(it.color.a) << ' ' << it.text;
+		lines.push_back(IniLine(Default::iniKeywordFunction, ss.str()).line());
+	}
 	writeTextFile(dirExec + Default::fileUsers, lines);
 }
 
-bool Filer::readTextFile(const string& file, vector<string>& lines, bool printMessage) {
-	std::ifstream ifs(file.c_str());
-	if (!ifs.good()) {
-		if (printMessage)
-			cerr << "couldn't open file " << file << endl;
-		return false;
-	}
+bool Filer::readTextFile(const string& file, vector<string>& lines) {
 	lines.clear();
+	std::ifstream ifs(file.c_str());
+	if (!ifs.good())
+		return false;
 
 	for (string line; readLine(ifs, line);)
-		if (!line.empty())		// skip empty lines
-			lines.push_back(line);
+		lines.push_back(line);
 	return true;
 }
 
@@ -204,120 +263,77 @@ bool Filer::writeTextFile(const string& file, const vector<string>& lines) {
 		cerr << "couldn't write file " << file << endl;
 		return false;
 	}
+
 	for (const string& line : lines)
 		ofs << line << endl;
 	return true;
 }
 
-vector<string> Filer::listDir(const string& dir, FileType filter, const vector<string>& extFilter) {
+vector<string> Filer::listDir(const string& dir, FileType filter) {
 	vector<string> entries;
 #ifdef _WIN32
 	WIN32_FIND_DATAW data;
 	HANDLE hFind = FindFirstFileW(stow(dir+"*").c_str(), &data);
 	if (hFind == INVALID_HANDLE_VALUE)
-		return {};
+		return entries;
+
 	do {
-		if (data.cFileName == wstring(L".") || data.cFileName == wstring(L".."))
-			continue;
-		
-		string name = wtos(data.cFileName);
-		if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-			if (filter & FTYPE_DIR)
-				entries.push_back(name);
-		} else if (data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-			if (filter & FTYPE_LINK)
-				entries.push_back(name);
-		} else if (filter & FTYPE_FILE) {
-			if (extFilter.empty())
-				entries.push_back(name);
-			else
-				for (const string& ext : extFilter)
-					if (hasExtension(name, ext)) {
-						entries.push_back(name);
-						break;
-					}
-		}
-	} while (FindNextFileW(hFind, &data) != 0);
+		if (wcscmp(data.cFileName, L".") && wcscmp(data.cFileName, L".."))	// ignore . and ..
+			if ((!(data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (filter & FTYPE_FILE)) || ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (filter & FTYPE_DIR)))
+				entries.push_back(wtos(data.cFileName));
+	} while (FindNextFileW(hFind, &data));
 	FindClose(hFind);
 #else
 	DIR* directory = opendir(dir.c_str());
-	if (directory) {
-		dirent* data = readdir(directory);
-		while (data) {
-			if (data->d_name == string(".") || data->d_name == string("..")) {
-				data = readdir(directory);
-				continue;
-			}
+	if (!directory)
+		return entries;
 
-			if (data->d_type == DT_DIR) {
-				if (filter & FTYPE_DIR)
-					entries.push_back(data->d_name);
-			} else if (data->d_type == DT_LNK) {
-				if (filter & FTYPE_LINK)
-					entries.push_back(data->d_name);
-			} else if (filter & FTYPE_FILE) {
-				if (extFilter.empty())
-					entries.push_back(data->d_name);
-				else
-					for (const string& ext : extFilter)
-						if (hasExtension(data->d_name, ext)) {
-							entries.push_back(data->d_name);
-							break;
-						}
-			}
-			data = readdir(directory);
-		}
-		closedir(directory);
-	}
+	while (dirent* data = readdir(directory))
+		if (strcmp(data->d_name, ".") && strcmp(data->d_name, ".."))	// ignore . and ..
+			if ((data->d_type != DT_DIR && (filter & FTYPE_FILE)) || (data->d_type == DT_DIR && (filter & FTYPE_DIR)))
+				entries.push_back(data->d_name);
+	closedir(directory);
 #endif
 	std::sort(entries.begin(), entries.end());
 	return entries;
 }
 
-vector<string> Filer::listDirRecursively(const string& dir, sizt offs) {
-	// I wrote this a long time ago and am too lazy to figure out how and why it works which is why there are no comments
-	if (offs == 0)
-		offs = dir.length();
+vector<string> Filer::listDirRecursively(string dir) {
+	dir = appendDsep(dir);
 	vector<string> entries;
 #ifdef _WIN32
 	WIN32_FIND_DATAW data;
 	HANDLE hFind = FindFirstFileW(stow(dir+"*").c_str(), &data);
 	if (hFind == INVALID_HANDLE_VALUE)
-		return {};
+		return entries;
+
 	do {
-		if (data.cFileName == wstring(L".") || data.cFileName == wstring(L".."))
+		if (!(wcscmp(data.cFileName, L".") && wcscmp(data.cFileName, L"..")))	// ignore . and ..
 			continue;
 
-		string name = wtos(data.cFileName);
-		if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-			vector<string> newEs = listDirRecursively(dir+name+dsep, offs);
-			std::sort(entries.begin(), entries.end());
+		if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {	// append subdirectoy's files to entries
+			vector<string> newEs = listDirRecursively(dir + wtos(data.cFileName));
 			entries.insert(entries.end(), newEs.begin(), newEs.end());
 		} else
-			entries.push_back(dir.substr(offs) + name);
-	} while (FindNextFileW(hFind, &data) != 0);
+			entries.push_back(dir + wtos(data.cFileName));
+	} while (FindNextFileW(hFind, &data));
 	FindClose(hFind);
 #else
 	DIR* directory = opendir(dir.c_str());
-	if (directory) {
-		dirent* data = readdir(directory);
-		while (data) {
-			if (data->d_name == string(".") || data->d_name == string("..")) {
-				data = readdir(directory);
-				continue;
-			}
+	if (!directory)
+		return entries;
 
-			if (data->d_type == DT_DIR) {
-				vector<string> newEs = listDirRecursively(dir+data->d_name+dsep, offs);
-				std::sort(entries.begin(), entries.end());
-				entries.insert(entries.end(), newEs.begin(), newEs.end());
-			} else
-				entries.push_back(dir.substr(offs) + data->d_name);
+	while (dirent* data = readdir(directory)) {
+		if (!(strcmp(data->d_name, ".") && strcmp(data->d_name, "..")))	// ignore . and ..
+			continue;
 
-			data = readdir(directory);
-		}
-		closedir(directory);
+		if (data->d_type == DT_DIR) {	// append subdirectoy's files to entries
+			vector<string> newEs = listDirRecursively(dir + data->d_name);
+			entries.insert(entries.end(), newEs.begin(), newEs.end());
+		} else
+			entries.push_back(dir + data->d_name);
 	}
+	closedir(directory);
 #endif
 	return entries;
 }
@@ -325,92 +341,44 @@ vector<string> Filer::listDirRecursively(const string& dir, sizt offs) {
 FileType Filer::fileType(const string& path) {
 #ifdef _WIN32
 	DWORD attrib = GetFileAttributesW(stow(path).c_str());
+	if (attrib == INVALID_FILE_ATTRIBUTES)
+		return FTYPE_NONE;
 	if (attrib & FILE_ATTRIBUTE_DIRECTORY)
 		return FTYPE_DIR;
-	if (attrib & FILE_ATTRIBUTE_SPARSE_FILE)
-		return FTYPE_LINK;
 #else
 	struct stat ps;
-	stat(path.c_str(), &ps);
+	if (stat(path.c_str(), &ps))
+		return FTYPE_NONE;
 	if (S_ISDIR(ps.st_mode))
 		return FTYPE_DIR;
-	if (S_ISLNK(ps.st_mode))
-		return FTYPE_LINK;
 #endif
 	return FTYPE_FILE;
 }
 
-bool Filer::fileExists(const string& path) {
-#ifdef _WIN32
-	return GetFileAttributesW(stow(path).c_str()) != INVALID_FILE_ATTRIBUTES;
-#else
-	struct stat ps;
-	return stat(path.c_str(), &ps) == 0;
-#endif
-}
+string Filer::findFont(const string& font) {
+	if (isAbsolute(font) && fileType(font) == FTYPE_FILE)	// check if font refers to a file
+		return font;
 
-#ifdef _WIN32
-vector<char> Filer::listDrives() {
-	vector<char> letters;
-	DWORD drives = GetLogicalDrives();
-	
-	for (char i=0; i<26; i++)
-		if (drives & (1 << i))
-			letters.push_back('A'+i);
-	return letters;
+	for (const string& dir : dirFonts)	// check font directories
+		for (string& it : listDirRecursively(dir))
+			if (strcmpCI(hasExt(it) ? delExt(filename(it)) : filename(it), font))
+				return it;
+	return "";	// nothing found
 }
-#endif
 
 string Filer::getDirExec() {
 	string path;
 #ifdef _WIN32
-	for (DWORD blen=4096; blen<=4096*1024; blen*=4) {
-		wchar* buffer = new wchar[blen];
-		if (GetModuleFileNameW(0, buffer, blen) != blen) {
-			path = wtos(buffer);
-			delete[] buffer;
-			break;
-		}
-		delete[] buffer;
-	}
+	wchar buffer[MAX_PATH];
+	GetModuleFileNameW(0, buffer, MAX_PATH);
+	path = wtos(buffer);
 #else
-	for (sizt blen=4096; blen<=4096*1024; blen*=4) {
-		char* buffer = new char[blen];
-		ssize_t len = readlink("/proc/self/exe", buffer, blen-1);
-		if (len != blen-1 && len != -1) {
-			buffer[len] = '\0';
-			path = buffer;
-			delete[] buffer;
-			break;
-		}
-		delete[] buffer;
-	}
+	char buffer[PATH_MAX];
+	int len = readlink("/proc/self/exe", buffer, PATH_MAX-1);
+	buffer[len] = '\0';
+	path = buffer;
 #endif
-	return path.empty() ? path : parentDir(path);
-}
-
-string Filer::findFont(const string& font) {
-	if (isAbsolute(font)) {	// check fontpath first
-		if (fileType(font) == FTYPE_FILE)
-			return font;
-		return checkDirForFont(filename(font), parentDir(font));
-	}
-
-	for (const string& dir : dirFonts) {	// check global font directories
-		string file = checkDirForFont(font, dir);
-		if (!file.empty())
-			return file;
-	}
-	return "";	// nothing found
-}
-
-string Filer::checkDirForFont(const string& font, const string& dir) {
-	for (string& it : listDirRecursively(dir)) {
-		string file = findChar(font, '.') ? filename(it) : delExtension(filename(it));
-		if (strcmpCI(file, font))
-			return dir + it;
-	}
-	return "";
+	return parentDir(path);
 }
 
 std::istream& Filer::readLine(std::istream& ifs, string& str) {

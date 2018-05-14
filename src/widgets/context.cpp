@@ -2,42 +2,50 @@
 
 // CONTEXT ITEM
 
-Context::Item::Item(const string& TXT, void(Program::* CAL)(Item*)) :
+ContextItem::ContextItem(const string& TXT, void (Program::*CAL)(ContextItem*)) :
 	text(TXT),
 	call(CAL)
-{}
+{
+	tex = World::drawSys()->renderText(text, Default::itemHeight, size);
+}
+
+void ContextItem::clear() {
+	if (tex)
+		SDL_DestroyTexture(tex);
+}
 
 // CONTEXT
 
-Context::Context(Widget* WGT, const vector<Item>& ITMS, const vec2i& POS, const vec2i& SIZ) :
+Context::Context(const vector<ContextItem>& ITMS, Widget* WGT, const vec2i& POS, int WDH) :
 	position(POS),
-	size(SIZ),
-	widget(WGT)
+	width(WDH),
+	widget(WGT),
+	items(ITMS)
 {
-	setItems(ITMS, SIZ.x);
+	for (ContextItem& it : items)
+		if (it.getSize().x > width)
+			width = it.getSize().x;
+}
+
+Context::~Context() {
+	for (ContextItem& it : items)
+		it.clear();
 }
 
 bool Context::onClick(const vec2i& mPos, uint8 mBut) {
 	bool inside = inRect(mPos, rect());
 	if (inside && mBut == SDL_BUTTON_LEFT) {
-		Context::Item& itm = items[(mPos.y - position.y) / Default::itemHeight];	// get the item that was clicked
+		ContextItem& itm = items[(mPos.y - position.y) / Default::itemHeight];	// get the item that was clicked
 		(World::program()->*itm.call)(&itm);
 	}
 	World::scene()->setContext(nullptr);	// close context
 	return inside;
 }
 
-void Context::setItems(const vector<Item>& newItems, int sizeX) {
-	size.x = sizeX;
-	items.resize(newItems.size());
-	for (sizt i=0; i<items.size(); i++) {
-		items[i] = newItems[i];
-		int len = World::winSys()->getFontSet().textLength(items[i].text, Default::itemHeight) + Default::textOffset*2;
-		if (len > size.x)
-			size.x = len;
-	}
+SDL_Rect Context::rect() const {
+	return {position.x, position.y, width, Default::itemHeight * items.size()};
 }
 
-vec2i Context::itemPos(sizt id) const {
-	return vec2i(position.x, position.y + id*Default::itemHeight);
+SDL_Rect Context::itemRect(sizt id) const {
+	return {position.x, position.y + id * Default::itemHeight, items[id].getSize().x, items[id].getSize().y};
 }

@@ -3,22 +3,22 @@
 // SIZE
 
 Size::Size(int PIX) :
-	usePix(true),
+	upx(true),
 	pix(PIX)
 {}
 
 Size::Size(float PRC) :
-	usePix(false),
+	upx(false),
 	prc(PRC)
 {}
 
 void Size::set(int PIX) {
-	usePix = true;
+	upx = true;
 	pix = PIX;
 }
 
 void Size::set(float PRC) {
-	usePix = false;
+	upx = false;
 	prc = PRC;
 }
 
@@ -27,13 +27,13 @@ void Size::set(float PRC) {
 Widget::Widget(const Size& SIZ, void* DAT) :
 	data(DAT),
 	parent(nullptr),
-	id(SIZE_MAX),
+	pcID(SIZE_MAX),
 	relSize(SIZ)
 {}
 
 void Widget::setParent(Layout* PNT, sizt ID) {
 	parent = PNT;
-	id = ID;
+	pcID = ID;
 }
 
 void Widget::setRelSize(int pix) {
@@ -47,11 +47,11 @@ void Widget::setRelSize(float prc) {
 }
 
 vec2i Widget::position() const {
-	return parent->wgtPos(id);
+	return parent->wgtPosition(pcID);
 }
 
 vec2i Widget::size() const {
-	return parent->wgtSize(id);
+	return parent->wgtSize(pcID);
 }
 
 SDL_Rect Widget::rect() const {
@@ -73,7 +73,7 @@ Button::Button(void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), con
 {}
 
 void Button::drawSelf() {
-	World::drawSys()->drawRect(overlapRect(rect(), parentFrame()), Default::colorNormal);
+	World::drawSys()->drawButton(this);
 }
 
 bool Button::onClick(const vec2i& mPos, uint8 mBut) {
@@ -107,7 +107,7 @@ bool CheckBox::onClick(const vec2i& mPos, uint8 mBut) {
 SDL_Rect CheckBox::boxRect() const {
 	vec2i pos = position();
 	vec2i siz = size();
-	int margin = (siz.x > siz.y) ? siz.y/4 : siz.x/4;
+	int margin = ((siz.x > siz.y) ? siz.y : siz.x) / 4;
 	return {pos.x+margin, pos.y+margin, siz.x-margin*2, siz.y-margin*2};
 }
 
@@ -125,17 +125,17 @@ void ColorBox::drawSelf() {
 SDL_Rect ColorBox::boxRect() const {
 	vec2i pos = position();
 	vec2i siz = size();
-	int margin = (siz.x > siz.y) ? siz.y/4 : siz.x/4;
+	int margin = ((siz.x > siz.y) ? siz.y : siz.x) / 4;
 	return {pos.x+margin, pos.y+margin, siz.x-margin*2, siz.y-margin*2};
 }
 
 // SLIDER
 
-Slider::Slider(int MIN, int MAX, int VAL, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ, void* DAT) :
+Slider::Slider(int VAL, int MIN, int MAX, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ, void* DAT) :
 	Button(LCL, RCL, SIZ, DAT),
+	val(VAL),
 	min(MIN),
-	max(MAX),
-	val(VAL)
+	max(MAX)
 {}
 
 void Slider::drawSelf() {
@@ -144,66 +144,57 @@ void Slider::drawSelf() {
 
 bool Slider::onClick(const vec2i& mPos, uint8 mBut) {
 	if (mBut == SDL_BUTTON_LEFT) {
-		World::scene()->setCapture(this);
-		int sx = sliderX();
-		if (outRange(mPos.x, sx, sx + Default::sliderWidth))	// if mouse outside of slider
+		World::scene()->capture = this;
+
+		int sp = sliderPos();
+		if (outRange(mPos.x, sp, sp + Default::sliderWidth))	// if mouse outside of slider
 			setSlider(mPos.x - Default::sliderWidth/2);
-		diffSliderMouseX = mPos.x - sliderX();	// get difference between mouse x and slider x
+		diffSliderMouse = mPos.x - sliderPos();	// get difference between mouse x and slider x
 	} else if (mBut == SDL_BUTTON_RIGHT && rcall)
 		(World::program()->*rcall)(this);
 	return true;
 }
 
 void Slider::onDrag(const vec2i& mPos, const vec2i& mMov) {
-	setSlider(mPos.x - diffSliderMouseX);
+	setSlider(mPos.x - diffSliderMouse);
 }
 
 void Slider::onUndrag(uint8 mBut) {
 	if (mBut == SDL_BUTTON_LEFT)	// if dragging slider stop dragging slider
-		World::scene()->setCapture(nullptr);
+		World::scene()->capture = nullptr;
 }
 
 void Slider::setSlider(int xpos) {
-	val = (xpos - position().x) * max / sliderL();
-	bringIn(val, min, max);
-
+	setVal((xpos - position().x - size().y/4) * max / sliderLim());
 	if (lcall)
 		(World::program()->*lcall)(this);
 }
 
-void Slider::setMin(int MIN) {
-	min = MIN;
-	bringIn(val, min, max);
-}
-
-void Slider::setMax(int MAX) {
-	max = MAX;
-	bringIn(val, min, max);
-}
-
 void Slider::setVal(int VAL) {
-	val = VAL;
-	bringIn(val, min, max);
-}
-
-int Slider::sliderX() const {
-	return position().x + val * sliderL() / max;
-}
-
-int Slider::sliderL() const {
-	return size().x - Default::sliderWidth;
+	val = bringIn(VAL, min, max);
 }
 
 SDL_Rect Slider::barRect() const {
 	vec2i pos = position();
 	vec2i siz = size();
-	return {pos.x, pos.y + siz.y/4, siz.x, siz.y/2};
+	int margin = siz.y / 4;
+	int height = siz.y / 2;
+	return {pos.x + margin, pos.y + margin, siz.x - height, height};
 }
 
 SDL_Rect Slider::sliderRect() const {
 	vec2i pos = position();
 	vec2i siz = size();
-	return {sliderX(), pos.y, Default::sliderWidth, siz.y};
+	return {sliderPos(), pos.y, Default::sliderWidth, siz.y};
+}
+
+int Slider::sliderPos() const {
+	return position().x + size().y/4 + val * sliderLim() / max;
+}
+
+int Slider::sliderLim() const {
+	vec2i siz = size();
+	return siz.x - siz.y/2 - Default::sliderWidth;
 }
 
 // LABEL
@@ -211,11 +202,27 @@ SDL_Rect Slider::sliderRect() const {
 Label::Label(const string& TXT, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ, Alignment ALG, void* DAT) :
 	Button(LCL, RCL, SIZ, DAT),
 	align(ALG),
+	tex(nullptr),
 	text(TXT)
 {}
 
+Label::~Label() {
+	if (tex)
+		SDL_DestroyTexture(tex);
+}
+
 void Label::drawSelf() {
 	World::drawSys()->drawLabel(this);
+}
+
+void Label::postInit() {
+	updateTex();
+	if (!parent->isVertical() && relSize.usePix() && relSize.getPix() == 0)	// if width is variable and set to 0 in pixels, set it so it fits to the text's length
+		relSize.set(textSize.x + Default::textOffset * 2);
+}
+
+void Label::onResize() {
+	updateTex();
 }
 
 vec2i Label::textPos() const {
@@ -223,8 +230,24 @@ vec2i Label::textPos() const {
 	if (align == Alignment::left)
 		return vec2i(rct.x + Default::textOffset, rct.y);
 	if (align == Alignment::center)
-		return vec2i(rct.x + (rct.w - World::winSys()->getFontSet().textLength(text, rct.h))/2, rct.y);
-	return vec2i(rct.x + rct.w - World::winSys()->getFontSet().textLength(text, rct.h) - Default::textOffset, rct.y);	// Alignment::right
+		return vec2i(rct.x + (rct.w - textSize.x)/2, rct.y);
+	return vec2i(rct.x + rct.w - textSize.x - Default::textOffset, rct.y);	// Alignment::right
+}
+
+SDL_Rect Label::textRect() const {
+	vec2i pos = textPos();
+	return {pos.x, pos.y, textSize.x, textSize.y};
+}
+
+void Label::setText(const string& str) {
+	text = str;
+	updateTex();
+}
+
+void Label::updateTex() {
+	if (tex)
+		SDL_DestroyTexture(tex);
+	tex = World::drawSys()->renderText(text, size().y, textSize);
 }
 
 // LINE EDITOR
@@ -235,52 +258,61 @@ LineEdit::LineEdit(const string& TXT, void (Program::*LCL)(Button*), void (Progr
 	textOfs(0),
 	cpos(0)
 {
-	cleanString(text, textType);
+	cleanText();
 }
 
 bool LineEdit::onClick(const vec2i& mPos, uint8 mBut) {
 	if (mBut == SDL_BUTTON_LEFT) {
-		World::scene()->setCapture(this);
+		oldText = text;
 		setCPos(text.length());
+		World::scene()->capture = this;
+		SDL_StartTextInput();
 	} else if (mBut == SDL_BUTTON_RIGHT && rcall)
 		(World::program()->*rcall)(this);
 	return true;
 }
 
-void LineEdit::onKeypress(const SDL_Keysym& key) {
+bool LineEdit::onKeypress(const SDL_Keysym& key) {
 	if (key.scancode == SDL_SCANCODE_LEFT) {	// move caret left
-		if (key.mod & KMOD_LALT)	// if holding alt skip word
-			setCPos(jumpToWordStart(text, cpos));
+		if (key.mod & KMOD_LALT)		// if holding alt skip word
+			setCPos(findWordStart());
 		else if (key.mod & KMOD_CTRL)	// if holding ctrl move to beginning
 			setCPos(0);
-		else if (cpos != 0)	// otherwise go left by one
+		else if (cpos != 0)				// otherwise go left by one
 			setCPos(cpos - 1);
 	} else if (key.scancode == SDL_SCANCODE_RIGHT) {	// move caret right
-		if (key.mod & KMOD_LALT)	// if holding alt skip word
-			setCPos(jumpToWordEnd(text, cpos));
+		if (key.mod & KMOD_LALT)		// if holding alt skip word
+			setCPos(findWordEnd());
 		else if (key.mod & KMOD_CTRL)	// if holding ctrl go to end
 			setCPos(text.length());
 		else if (cpos != text.length())	// otherwise go right by one
 			setCPos(cpos + 1);
 	} else if (key.scancode == SDL_SCANCODE_BACKSPACE) {	// delete left
-		if (key.mod & KMOD_LALT) {	// if holding alt delete left word
-			sizt id = jumpToWordStart(text, cpos);
+		if (key.mod & KMOD_LALT) {			// if holding alt delete left word
+			sizt id = findWordStart();
 			text.erase(id, cpos - id);
+			updateTex();
 			setCPos(id);
 		} else if (key.mod & KMOD_CTRL) {	// if holding ctrl delete line to left
-			text.erase(0, id);
+			text.erase(0, cpos);
+			updateTex();
 			setCPos(0);
-		} else if (cpos != 0) {	// otherwise delete left character
-			text.erase(cpos - 1);
+		} else if (cpos != 0) {				// otherwise delete left character
+			text.erase(cpos - 1, 1);
+			updateTex();
 			setCPos(cpos - 1);
 		}
 	} else if (key.scancode == SDL_SCANCODE_DELETE) {	// delete right character
-		if (key.mod & KMOD_LALT)	// if holding alt delete right word
-			text.erase(cpos, jumpToWordEnd(text, cpos) - cpos);
-		else if (key.mod & KMOD_CTRL)	// if holding ctrl delete line to right
+		if (key.mod & KMOD_LALT) {			// if holding alt delete right word
+			text.erase(cpos, findWordEnd() - cpos);
+			updateTex();
+		} else if (key.mod & KMOD_CTRL) {	// if holding ctrl delete line to right
 			text.erase(cpos, text.length() - cpos);
-		else if (cpos != text.length())	// otherwise delete right character
+			updateTex();
+		} else if (cpos != text.length()) {	// otherwise delete right character
 			text.erase(cpos, 1);
+			updateTex();
+		}
 	} else if (key.scancode == SDL_SCANCODE_HOME)	// move caret to beginning
 		setCPos(0);
 	else if (key.scancode == SDL_SCANCODE_END)	// move caret to end
@@ -291,51 +323,55 @@ void LineEdit::onKeypress(const SDL_Keysym& key) {
 	} else if (key.scancode == SDL_SCANCODE_C) {	// copy text
 		if (key.mod & KMOD_CTRL)
 			SDL_SetClipboardText(text.c_str());
-	} else if (key.scancode == SDL_SCANCODE_X) {	// cut text
-		if (key.mod & KMOD_CTRL) {
-			SDL_SetClipboardText(text.c_str());
-			setText("");
-		}
-	} else if (key.scancode == SDL_SCANCODE_Z || key.scancode == SDL_SCANCODE_Y) {	// set text to old text
-		if (key.mod & KMOD_CTRL) {
-			string newOldCopy = oldText;
-			setText(newOldCopy);
-		}
 	} else if (key.scancode == SDL_SCANCODE_RETURN)
 		confirm();
 	else if (key.scancode == SDL_SCANCODE_ESCAPE)
 		cancel();
+	else
+		return false;
+	return true;
 }
 
-void LineEdit::onText(string str) {
+void LineEdit::onText(const char* str) {
 	sizt olen = text.length();
 	text.insert(cpos, str);
-	cleanString(text, textType);
+	cleanText();
+	updateTex();
 	setCPos(cpos + (text.length() - olen));
-}
-
-vec2i LineEdit::textPos() const {
-	vec2i pos = position();
-	return vec2i(pos.x + textOfs + Default::textOffset, pos.y);
 }
 
 void LineEdit::setText(const string& str) {
 	oldText = text;
 	text = str;
-	cleanString(text, textType);
+	cleanText();
+	updateTex();
 	setCPos(text.length());
-}
-
-void LineEdit::setTextType(TextType type) {
-	textType = type;
-	cleanString(text, textType);
-	if (cpos > text.length())
-		setCPos(text.length());
 }
 
 SDL_Rect LineEdit::caretRect() const {
 	vec2i ps = position();
 	return {caretPos() + ps.x + Default::textOffset, ps.y, Default::caretWidth, size().y};
+}
+
+void LineEdit::confirm() {
+	textOfs = 0;
+	World::scene()->capture = nullptr;
+	SDL_StopTextInput();
+
+	if (lcall)
+		(World::program()->*lcall)(this);
+}
+
+void LineEdit::cancel() {
+	textOfs = 0;
+	text = oldText;
+	World::scene()->capture = nullptr;
+	SDL_StopTextInput();
+}
+
+vec2i LineEdit::textPos() const {
+	vec2i pos = position();
+	return vec2i(pos.x + textOfs + Default::textOffset, pos.y);
 }
 
 void LineEdit::setCPos(int cp) {
@@ -344,22 +380,7 @@ void LineEdit::setCPos(int cp) {
 }
 
 int LineEdit::caretPos() const {
-	return World::winSys()->getFontSet().textLength(text.substr(0, cpos), size().y) + textOfs;
-}
-
-void LineEdit::confirm() {
-	if (lcall)
-		(World::program()->*lcall)(this);
-
-	World::scene()->setCapture(nullptr);
-	textOfs = 0;
-	oldText = text;
-}
-
-void LineEdit::cancel() {
-	World::scene()->setCapture(nullptr);
-	textOfs = 0;
-	setText(oldText);
+	return World::drawSys()->textLength(text.substr(0, cpos), size().y) + textOfs;
 }
 
 void LineEdit::checkTextOffset() {
@@ -367,8 +388,142 @@ void LineEdit::checkTextOffset() {
 	int ce = cp + Default::caretWidth;
 	int sx = size().x;
 
-	if (cp < 0) {
+	if (cp < 0)
 		textOfs -= cp;
-	} else if (ce > sx)
+	else if (ce > sx)
 		textOfs -= ce - sx;
+}
+
+sizt LineEdit::findWordStart() {
+	sizt i = cpos;
+	if (text[i] != ' ' && i > 0 && text[i-1] == ' ')	// skip if first letter of word
+		i--;
+	while (text[i] == ' ' && i > 0)	// skip first spaces
+		i--;
+	while (text[i] != ' ' && i > 0)	// skip word
+		i--;
+	return (i == 0) ? i : i+1;	// correct position if necessary
+}
+
+sizt LineEdit::findWordEnd() {
+	sizt i = cpos;
+	while (text[i] == ' ' && i < text.length())	// skip first spaces
+		i++;
+	while (text[i] != ' ' && i < text.length())	// skip word
+		i++;
+	return i;
+}
+
+void LineEdit::cleanText() {
+	if (textType == TextType::sInteger)
+		cleanUIntText((text[0] == '-') ? 1 : 0);
+	else if (textType == TextType::sIntegerSpaced)
+		cleanSIntSpacedText();
+	else if (textType == TextType::uInteger)
+		cleanUIntText();
+	else if (textType == TextType::uIntegerSpaced)
+		cleanUIntSpacedText();
+	else if (textType == TextType::sFloating)
+		cleanUFloatText((text[0] == '-') ? 1 : 0);
+	else if (textType == TextType::sFloatingSpaced)
+		cleanSFloatSpacedText();
+	else if (textType == TextType::uFloating)
+		cleanUFloatText();
+	else if (textType == TextType::uFloatingSpaced)
+		cleanUFloatSpacedText();
+}
+
+void LineEdit::cleanSIntSpacedText(sizt i) {
+	while (text[i] == ' ')
+		i++;
+	if (text[i] == '-')
+		i++;
+
+	while (i < text.length()) {
+		if (isDigit(text[i]))
+			i++;
+		else if (text[i] == ' ') {
+			cleanSIntSpacedText(i+1);
+			break;
+		} else
+			text.erase(i, 1);
+	}
+}
+
+void LineEdit::cleanUIntText(sizt i) {
+	while (i < text.length()) {
+		if (isDigit(text[i]))
+			i++;
+		else
+			text.erase(i, 1);
+	}
+}
+
+void LineEdit::cleanUIntSpacedText() {
+	sizt i = 0;
+	while (text[i] == ' ')
+		i++;
+
+	while (i < text.length()) {
+		if (isDigit(text[i]))
+			i++;
+		else if (text[i] == ' ')
+			while (text[++i] == ' ');
+		else
+			text.erase(i, 1);
+	}
+}
+
+void LineEdit::cleanSFloatSpacedText(sizt i) {
+	while (text[i] == ' ')
+		i++;
+	if (text[i] == '-')
+		i++;
+
+	bool foundDot = false;
+	while (i < text.length()) {
+		if (isDigit(text[i]))
+			i++;
+		else if (text[i] == '.' && !foundDot) {
+			foundDot = true;
+			i++;
+		} else if (text[i] == ' ') {
+			cleanSFloatSpacedText(i+1);
+			break;
+		} else
+			text.erase(i, 1);
+	}
+}
+
+void LineEdit::cleanUFloatText(sizt i) {
+	bool foundDot = false;
+	while (i < text.length()) {
+		if (isDigit(text[i]))
+			i++;
+		else if (text[i] == '.' && !foundDot) {
+			foundDot = true;
+			i++;
+		} else
+			text.erase(i, 1);
+	}
+}
+
+void LineEdit::cleanUFloatSpacedText() {
+	sizt i = 0;
+	while (text[i] == ' ')
+		i++;
+
+	bool foundDot = false;
+	while (i < text.length()) {
+		if (isDigit(text[i]))
+			i++;
+		else if (text[i] == '.' && !foundDot) {
+			foundDot = true;
+			i++;
+		} else if (text[i] == ' ') {
+			while (text[++i] == ' ');
+			foundDot = false;
+		} else
+			text.erase(i, 1);
+	}
 }

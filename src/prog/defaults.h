@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <vector>
 #include <map>
 #include <unordered_map>
@@ -20,8 +21,8 @@ using std::cout;
 using std::cerr;
 using std::endl;
 using std::string;
+using std::ostringstream;
 using std::wstring;
-using std::to_string;
 using std::vector;
 using std::map;
 using std::pair;
@@ -48,7 +49,7 @@ using int32 = int32_t;
 using uint32 = uint32_t;
 using int64 = int64_t;
 using uint64 = uint64_t;
-using sizt = size_t;	// use this to iterate through stuff line std::vector or std::string
+using sizt = size_t;
 
 using char16 = char16_t;
 using char32 = char32_t;
@@ -60,7 +61,7 @@ using vec2f = vec2<float>;
 using vec2d = vec2<double>;
 using vec2t = vec2<sizt>;
 
-using mf1ptr = double (*)(double);	// math function (one arg) pointer
+using mf1ptr = double (*)(double);			// math function (one arg) pointer
 using mf2ptr = double (*)(double, double);	// math function (two args) pointer
 
 // get rid of SDL's main
@@ -87,9 +88,9 @@ namespace Default {
 const bool maximized = false;
 const bool fullscreen = false;
 const vec2i resolution(800, 600);
-const vec2d viewportPosition(-1.0, 1.0);
-const vec2d viewportSize(2.0, -2.0);
-const char font[] = "arial";
+const vec2f viewportPosition(-1.f, 1.f);
+const vec2f viewportSize(2.f, -2.f);
+const char font[] = "Arial";
 const int scrollSpeed = 8;
 
 // window
@@ -113,12 +114,11 @@ const SDL_Scancode keyZoomReset = SDL_SCANCODE_X;
 // colors
 const SDL_Color colorBackground = {10, 10, 10, 255};
 const SDL_Color colorNormal = {90, 90, 90, 255};
-const SDL_Color colorLight = {120, 120, 120, 255};
 const SDL_Color colorDark = {60, 60, 60, 255};
+const SDL_Color colorLight = {120, 120, 120, 255};
 const SDL_Color colorText = {210, 210, 210, 255};
 const SDL_Color colorGraph = {255, 255, 255, 255};
-const SDL_Color colorPopupDim = {2, 2, 2, 1};
-const SDL_Color colorNoDim = {1, 1, 1, 1};
+const SDL_Color colorPopupDim = {0, 0, 0, 127};
 
 // files and directories
 const char fileIcon[] = "icon.png";
@@ -168,17 +168,19 @@ const umap<string, mf1ptr> parserFuncs = {
 };
 
 // widgets' properties
+const int spacing = 5;
 const int itemHeight = 30;
 const int sliderWidth = 10;
 const int caretWidth = 4;
 const int graphClickArea = 4;
-const double keyMoveFactor = 0.25;
-const double mouseZoomFactor = 0.01;
-const double keyZoomFactor = 2.0;
+const float keyMoveFactor = 0.25f;
+const float keyZoomFactor = 2.f;
+const float mouseZoomFactor = 0.05f;
+const float wheelZoomFactor = 0.1f;
 
 // other random crap
 const int fontTestHeight = 100;
-const char fontTestString[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`~!@#$%^&*()_+-=[]{}'\"|;:,.<>/?";
+const char fontTestString[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`~!@#$%^&*()_+-=[]{}'\\\"|;:,.<>/?";
 const int textOffset = 5;
 const uint32 eventCheckTimeout = 50;
 const int scrollFactorWheel = -10;

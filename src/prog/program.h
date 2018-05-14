@@ -24,8 +24,8 @@ public:
 	void eventOpenGraphColorPick(Button* but);
 	void eventGraphFunctionChanged(Button* but);
 	void eventOpenContextFunction(Button* but);
-	void eventAddFunction(Context::Item* item);
-	void eventDelFunction(Context::Item* item);
+	void eventAddFunction(ContextItem* item);
+	void eventDelFunction(ContextItem* item);
 
 	// graph color picker
 	void eventGraphColorPickRed(Button* but);
@@ -38,24 +38,23 @@ public:
 	void eventVarRename(Button* but);
 	void eventVarRevalue(Button* but);
 	void eventOpenContextVariable(Button* but);
-	void eventAddVariable(Context::Item* item);
-	void eventDelVariable(Context::Item* item);
+	void eventAddVariable(ContextItem* item);
+	void eventDelVariable(ContextItem* item);
 
 	// graph view
 	void eventGetYConfirm(Button* but);
 	
 	// settings view
-	void eventSettingResolution(Button* but);
 	void eventSettingViewport(Button* but);
-	void eventSettingFont(Button* but);
 	void eventSettingFullscreen(Button* but);
+	void eventSettingFont(Button* but);
 	void eventSettingRendererOpen(Button* but);
-	void eventSettingRendererPick(Context::Item* item);
+	void eventSettingRendererPick(ContextItem* item);
 	void eventSettingScrollSpeed(Button* but);
+	void eventSettingReset(Button* but);
 
 	// other stuff
 	ProgState* getState() { return state.get(); }
-	void setState(ProgState* newState);
 	Parser* getParser() { return &parser; }
 	const Function& getFunction(sizt id) const { return funcs[id]; }
 	const vector<Function>& getFunctions() const { return funcs; }
@@ -67,5 +66,6 @@ private:
 	vector<Function> funcs;
 	map<string, double> vars;
 
-	bool wordValid(const string& str);
+	void setState(ProgState* newState);
+	bool wordValid(const string& str);	// checks if str can be used as a variable name
 };

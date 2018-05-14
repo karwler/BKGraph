@@ -1,68 +1,49 @@
 #pragma once
 
-#include "widgets/widgets.h"
-#include "utils/settings.h"
+#include "widgets/context.h"
+#include "widgets/layouts.h"
+#include "widgets/graphView.h"
 
-// for handling program state specific things that occur in all states
+// for handling program state specific things and creating layouts
 class ProgState {
 public:
-	virtual ~ProgState() {}
-
-	virtual void eventKeypress(const SDL_Keysym& key);
-	virtual void eventBack() = 0;
-	virtual void eventContextBlank() {}
+	virtual void eventKeypress(const SDL_Keysym& key);	// for general keyboard shortcuts
+	virtual void eventContextBlank() {}					// gets called when application key is pressed in eventKeypress
 	
-	virtual Layout* createLayout() = 0;
+	virtual Layout* createLayout() = 0;		// for creating the main layout for Scene
 	static Popup* createPopupMessage(const string& msg, const vec2<Size>& size);
+	static pair<Popup*, LineEdit*> createPopupTextInput(const string& msg, const string& txt, void (Program::*call)(Button*), LineEdit::TextType type, const vec2<Size>& size);
 	static Popup* createPopupColorPick(SDL_Color color, Button* clickedBox);
-	static Popup* createPopupTextInput(const string& msg, void (Program::*call)(Button*), const vec2<Size>& size);
+
+protected:
+	static const int topHeight;
+	static const int topSpacing;
+	static const int linesHeight;
+	static const int setsDescLength;
 };
 
 class ProgFuncs : public ProgState {
 public:
-	virtual void eventKeypress(const SDL_Keysym& key);
-	virtual void eventBack();
 	virtual void eventContextBlank();
 	
 	virtual Layout* createLayout();
-
-	sizt getFuncID(Widget* wgt) const { return interacts.at(wgt); }
-
-private:
-	map<Widget*, sizt> interacts;	// assigns widget reference to index of corresponding element in Program's funcs
 };
 
 class ProgVars : public ProgState {
 public:
-	virtual void eventKeypress(const SDL_Keysym& key);
-	virtual void eventBack();
 	virtual void eventContextBlank();
 
 	virtual Layout* createLayout();
-
-	const string& getVarKey(Widget* wgt) const { return interacts.at(wgt); }
-
-private:
-	map<Widget*, string> interacts;	// assigns widget reference to key of corresponding element in Program's vars
 };
 
 class ProgGraph : public ProgState {
 public:
 	virtual void eventKeypress(const SDL_Keysym& key);
-	virtual void eventBack();
 	
 	virtual Layout* createLayout();
-
-	GraphView* getGraphView() { return gview; }
-
-private:
-	GraphView* gview;
 };
 
 class ProgSettings : public ProgState {
 public:
-	virtual void eventKeypress(const SDL_Keysym& key);
-	virtual void eventBack();
-	
 	virtual Layout* createLayout();
 };

@@ -3,14 +3,15 @@
 void Parser::updateVars(const map<string, double>& pvars) {
 	vars.clear();
 	vars.insert(Default::parserConsts.begin(), Default::parserConsts.end());
-	vars.insert(vars.begin(), vars.end());
+	vars.insert(pvars.begin(), pvars.end());
 }
 
 Subfunction* Parser::createTree(const string& function) {
 	// set and format function string
 	func = function;
-	formatIgnores();
-	formatMultiplication();
+	for (id=0; id<func.length(); id++)	// remove whitespaces
+		if (func[id] == ' ')
+			func.erase(id--);
 
 	// check if syntax is correct
 	id = 0;
@@ -29,30 +30,6 @@ Subfunction* Parser::createTree(const string& function) {
 	return readAddSub();
 }
 
-// FORMATTER
-
-void Parser::formatIgnores() {
-	for (id=0; id<func.length();) {
-		if (func[id] == ' ')
-			func.erase(id);
-		else
-			id++;
-	}
-}
-
-void Parser::formatMultiplication() {
-	for (id=0; id<func.length(); id++) {
-		sizt in = id + 1;
-		bool number = isNumber(func[in]);
-		bool letter = isLetter(func[in]);
-
-		if ((isNumber(func[id]) && (letter || func[in] == '(')) || (isLetter(func[id]) && (number || func[in] == '(')) || (func[id] == ')' && (number || letter || func[in] == '('))) {
-			func.insert(in, "*");
-			id = in;
-		}
-	}
-}
-
 // CHECKER
 
 void Parser::checkFirst() {
@@ -64,8 +41,6 @@ void Parser::checkFirst() {
 		checkParOpen();
 	else if (func[id] == '-')
 		checkOperator();
-	else if (func[id] == '!')
-		checkFactorial();
 	else
 		throw id;
 }
@@ -76,57 +51,35 @@ void Parser::checkNumber() {
 	if (func[id] == '.')
 		while (isDigit(func[++id]));
 
-	if (isOperator(func[id]))
-		checkOperator();
-	else if (func[id] == ')')
-		checkParClose();
-	else if (func[id] != '\0')
-		throw id;
+	checkVar();
 }
 
 void Parser::checkWord() {
 	string word = jumpWord();
 	if (vars.count(word))
 		checkVar();
-	else if (Default::parserFuncs.count(word))
-		checkFunc();
+	else if (Default::parserFuncs.count(word) && func[id] == '(')
+		checkParOpen();
 	else
 		throw id;
 }
 
 void Parser::checkVar() {
+	while (func[id] == '!')
+		id++;
+
 	if (isOperator(func[id]))
 		checkOperator();
 	else if (func[id] == ')')
 		checkParClose();
-	else if (func[id] != '\0')
-		throw id;
-}
-
-void Parser::checkFunc() {
-	if (func[id] == '(')
-		checkParOpen();
-	else
+	else if (isNumber(func[id]) || isLetter(func[id]) || func[id] == '(') {
+		func.insert(id, "*");
+		checkOperator();
+	} else if (func[id] != '\0')
 		throw id;
 }
 
 void Parser::checkOperator() {
-	id++;
-	if (isNumber(func[id]))
-		checkNumber();
-	else if (isLetter(func[id]))
-		checkWord();
-	else if (func[id] == '(')
-		checkParOpen();
-	else if (func[id] == '-')
-		checkOperator();
-	else if (func[id] == '!')
-		checkFactorial();
-	else
-		throw id;
-}
-
-void Parser::checkFactorial() {
 	id++;
 	if (isNumber(func[id]))
 		checkNumber();
@@ -151,12 +104,7 @@ void Parser::checkParClose() {
 	id++;
 	pcnt--;
 
-	if (isOperator(func[id]))
-		checkOperator();
-	else if (func[id] == ')')
-		checkParClose();
-	else if (func[id] != '\0')
-		throw id;
+	checkVar();
 }
 
 // READER
@@ -189,17 +137,19 @@ Subfunction* Parser::readPower() {
 }
 
 Subfunction* Parser::readFirst() {
+	Subfunction* ret;
 	if (isNumber(func[id]))
-		return readNumber();
+		ret = readNumber();
 	else if (isLetter(func[id]))
-		return readWord();
+		ret = readWord();
 	else if (func[id] == '(')
-		return readParentheses();
-	else if (func[id] == '-' || func[id] == '!') {
-		mf1ptr mfp = (func[id++] == '-') ? dNeg : dFac;
-		return new SubfunctionF1(mfp, readFirst());
-	}
-	return nullptr;
+		ret = readParentheses();
+	else if (func[id] == '-')
+		ret = new SubfunctionF1(dNeg, readFirst());
+
+	for (; func[id] == '!'; id++)
+		ret = new SubfunctionF1(dFac, ret);
+	return ret;
 }
 
 Subfunction* Parser::readParentheses() {
@@ -212,8 +162,8 @@ Subfunction* Parser::readParentheses() {
 Subfunction* Parser::readNumber() {
 	double res = 0.0;
 	if (func[id] != '.')
-		while (isDigit(func[id])) 
-			res = res*10.0 + double(func[id++] - '0');
+		for (; isDigit(func[id]); id++)
+			res = res*10.0 + double(func[id] - '0');
 	
 	if (func[id] == '.') {
 		double fact = 1.0;

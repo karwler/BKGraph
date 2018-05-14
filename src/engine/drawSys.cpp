@@ -1,10 +1,61 @@
 #include "world.h"
 
-DrawSys::DrawSys(SDL_Window* window, int driverIndex)
+// FONT SET
+
+FontSet::FontSet(const string& FILE) :
+	file(FILE)
+{
+	// check if font can be loaded
+	TTF_Font* tmp = TTF_OpenFont(file.c_str(), Default::fontTestHeight);
+	if (!tmp)
+		throw "Couldn't open font " + file + '\n' + TTF_GetError();
+
+	// get approximate height scale factor
+	int size;
+	TTF_SizeUTF8(tmp, Default::fontTestString, nullptr, &size);
+	heightScale = float(Default::fontTestHeight) / float(size);
+	TTF_CloseFont(tmp);
+}
+
+FontSet::~FontSet() {
+	for (const pair<int, TTF_Font*>& it : fonts)
+		TTF_CloseFont(it.second);
+}
+
+void FontSet::clear() {
+	for (const pair<int, TTF_Font*>& it : fonts)
+		TTF_CloseFont(it.second);
+	fonts.clear();
+}
+
+TTF_Font* FontSet::addSize(int size) {
+	TTF_Font* font = TTF_OpenFont(file.c_str(), size);
+	if (font)
+		fonts.insert(make_pair(size, font));
+	return font;
+}
+
+TTF_Font* FontSet::getFont(int height) {
+	height = float(height) * heightScale;
+	return fonts.count(height) ? fonts.at(height) : addSize(height);	// load font if it hasn't been loaded yet
+}
+
+int FontSet::length(const string& text, int height) {
+	int len = 0;
+	TTF_Font* font = getFont(height);
+	if (font)
+		TTF_SizeUTF8(font, text.c_str(), &len, nullptr);
+	return len;
+}
+
+// DRAW SYS
+
+DrawSys::DrawSys(SDL_Window* window, int driverIndex) :
+	fontSet(Filer::findFont(World::winSys()->getSettings().font))
 {
 	renderer = SDL_CreateRenderer(window, driverIndex, Default::rendererFlags);
 	if (!renderer)
-		throw "couldn't create renderer\n" + string(SDL_GetError());
+		throw "Couldn't create renderer:\n" + string(SDL_GetError());
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 }
 
@@ -12,60 +63,76 @@ DrawSys::~DrawSys() {
 	SDL_DestroyRenderer(renderer);
 }
 
+SDL_Rect DrawSys::viewport() const {
+	SDL_Rect view;
+	SDL_RenderGetViewport(renderer, &view);
+	return view;
+}
+
+SDL_Texture* DrawSys::renderText(const string& text, int height, vec2i& size) {
+	if (text.empty()) {	// not possible to draw empty text
+		size = 0;
+		return nullptr;
+	}
+	SDL_Surface* surf = TTF_RenderUTF8_Blended(fontSet.getFont(height), text.c_str(), Default::colorText);
+	SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+	size = vec2i(surf->w, surf->h);
+	SDL_FreeSurface(surf);
+	return tex;
+}
+
 void DrawSys::drawWidgets() {
-	// clear screen
-	colorDim = World::scene()->getPopup() ? Default::colorPopupDim : Default::colorNoDim;
-	SDL_SetRenderDrawColor(renderer, Default::colorBackground.r/colorDim.r, Default::colorBackground.g/colorDim.g, Default::colorBackground.b/colorDim.b, Default::colorBackground.a/colorDim.a);
+	SDL_SetRenderDrawColor(renderer, Default::colorBackground.r, Default::colorBackground.g, Default::colorBackground.b, Default::colorBackground.a);
 	SDL_RenderClear(renderer);
 
-	// draw main widgets
-	World::scene()->getLayout()->drawSelf();
-	
-	// draw popup if exists
-	colorDim = Default::colorNoDim;
-	if (World::scene()->getPopup())
-		World::scene()->getPopup()->drawSelf();
+	World::scene()->getLayout()->drawSelf();	// draw main widgets
+	if (World::scene()->getPopup()) {	// draw popup if exists and dim main widgets
+		SDL_Rect view = viewport();
+		SDL_SetRenderDrawColor(renderer, Default::colorPopupDim.r, Default::colorPopupDim.g, Default::colorPopupDim.b, Default::colorPopupDim.a);
+		SDL_RenderFillRect(renderer, &view);
 
-	// draw context if exists
-	if (World::scene()->getContext())
+		World::scene()->getPopup()->drawSelf();
+	}
+	if (World::scene()->getContext())	// draw context if exists
 		drawContext(World::scene()->getContext());
 
-	// draw caret if capturing LineEdit
-	if (LineEdit* let = dynamic_cast<LineEdit*>(World::scene()->getCapture()))
+	if (LineEdit* let = dynamic_cast<LineEdit*>(World::scene()->capture))	// draw caret if capturing LineEdit
 		drawRect(let->caretRect(), Default::colorLight);
 
 	SDL_RenderPresent(renderer);
 }
 
+void DrawSys::drawButton(Button* wgt) {
+	drawRect(overlapRect(wgt->rect(), wgt->parentFrame()), Default::colorNormal);
+}
+
 void DrawSys::drawCheckBox(CheckBox* wgt) {
 	SDL_Rect frame = wgt->parentFrame();
-	drawRect(overlapRect(wgt->rect(), frame), Default::colorNormal);	// draw background
+	drawRect(overlapRect(wgt->rect(), frame), Default::colorNormal);									// draw background
 	drawRect(overlapRect(wgt->boxRect(), frame), wgt->on ? Default::colorLight : Default::colorDark);	// draw checkbox
 }
 
 void DrawSys::drawColorBox(ColorBox* wgt) {
 	SDL_Rect frame = wgt->parentFrame();
 	drawRect(overlapRect(wgt->rect(), frame), Default::colorNormal);	// draw background
-	drawRect(overlapRect(wgt->boxRect(), frame), wgt->color);	// draw colorbox
+	drawRect(overlapRect(wgt->boxRect(), frame), wgt->color);			// draw colorbox
 }
 
 void DrawSys::drawSlider(Slider* wgt) {
 	SDL_Rect frame = wgt->parentFrame();
-	drawRect(overlapRect(wgt->rect(), frame), Default::colorNormal);	// draw background
-	drawRect(overlapRect(wgt->barRect(), frame), Default::colorDark);	// draw bar
+	drawRect(overlapRect(wgt->rect(), frame), Default::colorNormal);		// draw background
+	drawRect(overlapRect(wgt->barRect(), frame), Default::colorDark);		// draw bar
 	drawRect(overlapRect(wgt->sliderRect(), frame), Default::colorLight);	// draw slider
 }
 
 void DrawSys::drawLabel(Label* wgt) {
-	// get background rect and draw background
 	SDL_Rect rect = overlapRect(wgt->rect(), wgt->parentFrame());
-	drawRect(rect, Default::colorNormal);
-	
-	// modify frame and draw text if exists
-	if (!wgt->getText().empty()) {
+	drawRect(rect, Default::colorNormal);	// draw background
+
+	if (wgt->tex) {		// modify frame and draw text if exists
 		rect.x += Default::textOffset;
-		rect.w -= Default::textOffset*2;
-		drawText(wgt->getText(), wgt->textPos(), wgt->size().y, Default::colorText, rect);
+		rect.w -= Default::textOffset * 2;
+		drawText(wgt->tex, wgt->textRect(), rect);
 	}
 }
 
@@ -74,9 +141,16 @@ void DrawSys::drawGraphView(GraphView* wgt) {
 	vec2i siz = wgt->size();
 	int endy = pos.y + siz.y;
 
+	// draw lines
+	vec2i lstt = vec2i(dotToPix(vec2f(World::winSys()->getSettings().viewPos.x, 0.f), World::winSys()->getSettings().viewPos, World::winSys()->getSettings().viewSize, vec2f(siz))) + pos;
+	drawLine(lstt, vec2i(lstt.x + siz.x - 1, lstt.y), Default::colorGraph, {pos.x, pos.y, siz.x, siz.y});
+
+	lstt = vec2i(dotToPix(vec2f(0.f, World::winSys()->getSettings().viewPos.y), World::winSys()->getSettings().viewPos, World::winSys()->getSettings().viewSize, vec2f(siz))) + pos;
+	drawLine(lstt, vec2i(lstt.x, lstt.y + siz.y - 1), Default::colorGraph, {pos.x, pos.y, siz.x, siz.y});
+
 	// draw graphs
 	for (const Graph& it : wgt->getGraphs()) {
-		SDL_Color color = dimColor(World::program()->getFunction(it.fid).color);
+		SDL_Color color = World::program()->getFunction(it.fid).color;
 		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 
 		sizt start;
@@ -93,29 +167,20 @@ void DrawSys::drawGraphView(GraphView* wgt) {
 		if (lastIn)
 			SDL_RenderDrawLines(renderer, &it.pixs[start], it.pixs.size()-start);
 	}
-	
-	// draw lines
-	vec2i lstt = vec2i(dotToPix(vec2d(World::winSys()->getSettings().viewPos.x, 0.0), World::winSys()->getSettings().viewPos, World::winSys()->getSettings().viewSize, vec2d(siz))) + pos;
-	drawLine(lstt, vec2i(lstt.x + siz.x - 1, lstt.y), Default::colorGraph, {pos.x, pos.y, siz.x, siz.y});
-
-	lstt = vec2i(dotToPix(vec2d(0.0, World::winSys()->getSettings().viewPos.y), World::winSys()->getSettings().viewPos, World::winSys()->getSettings().viewSize, vec2d(siz))) + pos;
-	drawLine(lstt, vec2i(lstt.x, lstt.y + siz.y - 1), Default::colorGraph, {pos.x, pos.y, siz.x, siz.y});
 }
 
 void DrawSys::drawScrollArea(ScrollArea* box) {
-	vec2t interval = box->visibleItems();	// get index interval of items on screen and draw children
-	for (sizt i=interval.l; i<=interval.u; i++)
+	vec2t vis = box->visibleWidgets();	// get index interval of items on screen and draw children
+	for (sizt i=vis.l; i<vis.u; i++)
 		box->getWidget(i)->drawSelf();
 
-	// draw scroll bar
-	SDL_Rect frame = box->frame();
-	drawRect(overlapRect(box->barRect(), frame), Default::colorDark);
-	drawRect(overlapRect(box->sliderRect(), frame), Default::colorLight);
+	drawRect(box->barRect(), Default::colorDark);		// draw scroll bar
+	drawRect(box->sliderRect(), Default::colorLight);	// draw scroll slider
 }
 
 void DrawSys::drawPopup(Popup* pop) {
 	drawRect(pop->rect(), Default::colorNormal);	// draw background
-	for (Widget* it : pop->getWidgets())	// draw rest
+	for (Widget* it : pop->getWidgets())			// draw children
 		it->drawSelf();
 }
 
@@ -123,42 +188,28 @@ void DrawSys::drawContext(Context* con) {
 	SDL_Rect rect = con->rect();
 	drawRect(rect, Default::colorLight);	// draw background
 	
-	// draw items
-	const vector<Context::Item>& items = con->getItems();
-	for (sizt i=0; i<items.size(); i++)
-		drawText(items[i].text, con->itemPos(i), Default::itemHeight, Default::colorText, rect);
+	const vector<ContextItem>& items = con->getItems();
+	for (sizt i=0; i<items.size(); i++)		// draw items aka. text
+		drawText(items[i].tex, con->itemRect(i), rect);
 }
 
 void DrawSys::drawRect(const SDL_Rect& rect, SDL_Color color) {
-	color = dimColor(color);
 	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderFillRect(renderer, &rect);
 }
 
 void DrawSys::drawLine(vec2i pos, vec2i end, SDL_Color color, const SDL_Rect& frame) {
-	color = dimColor(color);
-	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-
-	if (cropLine(pos, end, frame))
+	if (cropLine(pos, end, frame)) {
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 		SDL_RenderDrawLine(renderer, pos.x, pos.y, end.x, end.y);
+	}
 }
 
-void DrawSys::drawText(const string& text, const vec2i& pos, int height, SDL_Color color, const SDL_Rect& frame) {
-	// get text texture
-	SDL_Surface* surf = TTF_RenderUTF8_Blended(World::winSys()->getFontSet().getFont(height), text.c_str(), dimColor(color));
-	SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
-
+void DrawSys::drawText(SDL_Texture* tex, const SDL_Rect& rect, const SDL_Rect& frame) {
 	// crop destination rect and original texture rect
-	SDL_Rect dst = {pos.x, pos.y, surf->w, surf->h};
+	SDL_Rect dst = rect;
 	SDL_Rect crop = cropRect(dst, frame);
-	SDL_Rect src = {crop.x, crop.y, surf->w - crop.w, surf->h - crop.h};
+	SDL_Rect src = {crop.x, crop.y, rect.w - crop.w, rect.h - crop.h};
 
-	// draw and cleanup
 	SDL_RenderCopy(renderer, tex, &src, &dst);
-	SDL_DestroyTexture(tex);
-	SDL_FreeSurface(surf);
-}
-
-SDL_Color DrawSys::dimColor(SDL_Color color) {
-	return {uint8(color.r/colorDim.r), uint8(color.g/colorDim.g), uint8(color.b/colorDim.b), uint8(color.a/colorDim.a)};
 }

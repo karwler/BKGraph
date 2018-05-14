@@ -54,10 +54,13 @@ Supported operations, constants and functions are:
 - round, floor, ceil (round nearest/downwards/upwards)  
 - trunc (cut off decimal part)  
 
+Functions must have parentheses.  
+Whitespaces are ignored.  
+
 ### Variable View
 Right click to open a context menu for editing the fucntion list.  
 Left input field sets the variable name and the right one sets it's value.  
-Variable names can consist of upper-/lowercase letters from "A" to "Z" and "_".  
+Variable names can consist of upper-/lowercase letters from "A" to "Z" or "_".  
 
 ### Graph View
 To move the viewport either hold down the left mouse button and move the mouse or use the arrow keys.  

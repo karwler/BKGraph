@@ -1,19 +1,26 @@
-#pragma once
+﻿#pragma once
 
-#include "context.h"
+#include "prog/defaults.h"
+#include "utils/utils.h"
 
-struct Size {
+class Size {
+public:
 	Size(int PIX);
 	Size(float PRC=1.f);
 
-	bool usePix;
+	bool usePix() const { return upx; }
+	int getPix() const { return pix; }
+	float getPrc() const { return prc; }
+
+	void set(int PIX);
+	void set(float PRC);
+
+private:
+	bool upx;		// whether to use pix or prc
 	union {
 		int pix;	// use if type is pix
 		float prc;	// use if type is prc
 	};
-
-	void set(int PIX);
-	void set(float PRC);
 };
 
 // can be used as spacer
@@ -23,13 +30,17 @@ public:
 	virtual ~Widget() {}
 
 	virtual void drawSelf() {}	// calls appropriate drawing function(s) in DrawSys
+	virtual void postInit() {}
+	virtual void onResize() {}	// for updating values when window size changed
+	virtual bool onKeypress(const SDL_Keysym& key) { return false; }	// returns true if interaction occurs
+	virtual void onText(const char* str) {}
 	virtual bool onClick(const vec2i& mPos, uint8 mBut) { return false; }	// returns true if interaction occurs
 	virtual void onDrag(const vec2i& mPos, const vec2i& mMov) {}	// mouse move while left button down
 	virtual void onUndrag(uint8 mBut) {}	// get's called on mouse button up if instance is Scene's capture
-	virtual void onResize() {}	// for updating values when window size changed
+	virtual void onScroll(int wMov) {}	// on mouse wheel y movement
 
 	Layout* getParent() const { return parent; }
-	sizt getID() const { return id; }
+	sizt getID() const { return pcID; }
 	void setParent(Layout* PNT, sizt ID);
 
 	const Size& getRelSize() const { return relSize; }
@@ -45,7 +56,7 @@ public:
 	void* data;	// random piece of data that can be attached to this Widget for convenience (mainly for use in Program's events)
 protected:
 	Layout* parent;	// every widget that isn't a Layout should have a parent
-	sizt id;		// this widget'\s id in parent's widget list
+	sizt pcID;		// this widget'\s id in parent's widget list
 	Size relSize;	// size relative to parent's parameters
 };
 
@@ -59,11 +70,11 @@ public:
 	virtual bool onClick(const vec2i& mPos, uint8 mBut);
 
 protected:
-	void (Program::*lcall)(Button*);
-	void (Program::*rcall)(Button*);
+	void (Program::*lcall)(Button*);	// call on left click
+	void (Program::*rcall)(Button*);	// call on right click
 };
 
-// if you don't know what a checkbox is then I don't know what to tell ya
+// button with on or off state
 class CheckBox : public Button {
 public:
 	CheckBox(bool ON=false, void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size(), void* DAT=nullptr);
@@ -93,7 +104,7 @@ public:
 // horizontal slider (maybe one day it'll be able to be vertical)
 class Slider : public Button {
 public:
-	Slider(int MIN=0, int MAX=255, int VAL=0, void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size(), void* DAT=nullptr);
+	Slider(int VAL=0, int MIN=0, int MAX=255, void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size(), void* DAT=nullptr);
 	virtual ~Slider() {}
 
 	virtual void drawSelf();
@@ -101,67 +112,98 @@ public:
 	virtual void onDrag(const vec2i& mPos, const vec2i& mMov);
 	virtual void onUndrag(uint8 mBut);
 
-	void setSlider(int xpos);
-	int getMin() const { return min; }
-	void setMin(int MIN);
-	int getMax() const { return max; }
-	void setMax(int MAX);
 	int getVal() const { return val; }
 	void setVal(int VAL);
 
-	int sliderX() const;
-	int sliderL() const;
 	SDL_Rect barRect() const;
 	SDL_Rect sliderRect() const;
 
 private:
-	int min, max, val;
-	int diffSliderMouseX;
+	int val, min, max;
+	int diffSliderMouse;	// space between slider and mouse x position while dragging slider
+
+	void setSlider(int xpos);
+	int sliderPos() const;
+	int sliderLim() const;
 };
 
 // it's a little ass backwards but labels (aka a line of text) are buttons
 class Label : public Button {
 public:
+	enum class Alignment : uint8 {
+		left,
+		center,
+		right
+	};
+
 	Label(const string& TXT="", void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size(), Alignment ALG=Alignment::left, void* DAT=nullptr);
-	virtual ~Label() {}
+	virtual ~Label();
 
 	virtual void drawSelf();
+	virtual void postInit();
+	virtual void onResize();
 
+	SDL_Rect textRect() const;
 	const string& getText() const { return text; }
-	virtual vec2i textPos() const;
-	virtual void setText(const string& str) { text = str; }
+	virtual void setText(const string& str);
 
 	Alignment align;	// text alignment
+	SDL_Texture* tex;	// rendered text
 protected:
+	vec2i textSize;
 	string text;
+
+	virtual vec2i textPos() const;
+	void updateTex();
 };
 
 // for editing a line of text (ignores Label's align), (calls Button's lcall on text confirm rather than on click)
 class LineEdit : public Label {
 public:
+	enum class TextType : uint8 {
+		text,
+		sInteger,
+		sIntegerSpaced,
+		uInteger,
+		uIntegerSpaced,
+		sFloating,
+		sFloatingSpaced,
+		uFloating,
+		uFloatingSpaced
+	};
+
 	LineEdit(const string& TXT="", void (Program::*LCL)(Button*)=nullptr, void (Program::*RCL)(Button*)=nullptr, const Size& SIZ=Size(), TextType TYP=TextType::text, void* DAT=nullptr);
 	virtual ~LineEdit() {}
 
+	virtual bool onKeypress(const SDL_Keysym& key);
 	virtual bool onClick(const vec2i& mPos, uint8 mBut);
-	virtual void onKeypress(const SDL_Keysym& key);
-	void onText(string str);
+	virtual void onText(const char* str);
 
 	const string& getOldText() const { return oldText; }
-	virtual vec2i textPos() const;
 	virtual void setText(const string& str);
-	void setTextType(TextType type);
 	SDL_Rect caretRect() const;
-	void setCPos(int cp);
 
 	void confirm();
 	void cancel();
 
 private:
-	int textOfs;		// text's horizontal offset
+	int textOfs;	// text's horizontal offset
 	sizt cpos;		// caret position
 	TextType textType;
 	string oldText;
 
+	virtual vec2i textPos() const;
+	void setCPos(int cp);
 	int caretPos() const;	// caret's relative x position
 	void checkTextOffset();
+
+	sizt findWordStart();	// returns index of first character of word before cpos
+	sizt findWordEnd();		// returns index of character after last character of word after cpos
+	void cleanText();
+	void cleanSIntSpacedText(sizt i=0);
+	void cleanUIntText(sizt i=0);
+	void cleanUIntSpacedText();
+	void cleanSFloatSpacedText(sizt i=0);
+	void cleanUFloatText(sizt i=0);
+	void cleanUFloatSpacedText();
 };

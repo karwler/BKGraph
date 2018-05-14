@@ -5,69 +5,68 @@
 // container for other widgets
 class Layout : public Widget {
 public:
-	Layout(const Size& SIZ=Size(), bool VRT=true, void* DAT=nullptr);
+	Layout(const vector<Widget*>& WGS={}, const Size& SIZ=Size(), bool VRT=true, int SPC=Default::spacing, void* DAT=nullptr);
 	virtual ~Layout();
 
 	virtual void drawSelf();
+	virtual void postInit();
 	virtual void onResize();
 
-	bool getVertical() const { return vertical; }
-	void setVertical(bool yes);
-
-	Widget* getWidget(sizt id) { return wgts[id]; }
-	const vector<Widget*>& getWidgets() const { return wgts; }
-	void setWidgets(const vector<Widget*>& widgets);
+	Widget* getWidget(sizt id) { return widgets[id]; }
+	const vector<Widget*>& getWidgets() const { return widgets; }
 
 	virtual vec2i position() const;
 	virtual vec2i size() const;
 	virtual SDL_Rect parentFrame() const;
-	virtual vec2i wgtPos(sizt id) const;
+	virtual vec2i wgtPosition(sizt id) const;
 	virtual vec2i wgtSize(sizt id) const;
+	bool isVertical() const { return vertical; }
 
 protected:
+	vector<Widget*> widgets;
+	vector<int> positions;	// widgets' positions. one element larger than widgets. last element is end of last widget + spacing
+	int spacing;			// space between widgets
 	bool vertical;			// whether to stack widgets vertically or horizontally
-	vector<Widget*> wgts;	// widgets
-	vector<int> poss;		// widgets' positions. one element larger than wgts. last element is layout's size
+
+	int listSize() const;		// relative poistion of end of last widget
 };
 
 // places widgets vertically through which the user can scroll (DON"T PUT SCROLL AREAS INTO OTHER SCROLL AREAS)
 class ScrollArea : public Layout {
 public:
-	ScrollArea(const Size& SIZ=Size(), void* DAT=nullptr);
+	ScrollArea(const vector<Widget*>& WGS={}, const Size& SIZ=Size(), int SPC=Default::spacing, void* DAT=nullptr);
 	virtual ~ScrollArea() {}
 
 	virtual void drawSelf();
+	virtual void onResize();
 	virtual bool onClick(const vec2i& mPos, uint8 mBut);
 	virtual void onDrag(const vec2i& mPos, const vec2i& mMov);
 	virtual void onUndrag(uint8 mBut);
-	virtual void onResize();
+	virtual void onScroll(int wMov);
 
-	void setSlider(int ypos);
-	void dragList(int ypos);
-	void scrollList(int ymov);
-
-	int barW() const;		// returns 0 if slider isn't needed
-	int listL() const;		// max list position aka listY
-	int sliderH() const;	// slider height
-	int sliderY() const;	// slider position
-	int sliderL() const;	// max slider position aka sliderY
-
-	virtual vec2i wgtPos(sizt id) const;
+	virtual vec2i wgtPosition(sizt id) const;
 	virtual vec2i wgtSize(sizt id) const;
 	virtual SDL_Rect frame() const;
 	SDL_Rect barRect() const;
 	SDL_Rect sliderRect() const;
-	vec2t visibleItems() const;
+	vec2t visibleWidgets() const;	// returns indexes of first and one after last visible widget
 	
-	int diffSliderMouseY;	// space between slider and mouse position
 private:
-	int listY;		// position of the list
+	int listPos;
+	int diffSliderMouse;	// space between slider and mouse y position while dragging slider
+
+	void setSlider(int ypos);
+	int listLim() const;	// max list position
+	int sliderHeight() const;
+	int sliderPos() const;
+	int sliderLim() const;	// max slider position
+	int barWidth() const;	// returns 0 if slider isn't needed
 };
 
 // layout with background that is placed in the center of the screen
 class Popup : public Layout {
 public:
-	Popup(const vec2<Size>& SIZ=vec2<Size>(), bool VRT=true, void* DAT=nullptr);
+	Popup(const vector<Widget*>& WGS={}, const vec2<Size>& SIZ=Size(), bool VRT=true, int SPC=Default::spacing, void* DAT=nullptr);
 	virtual ~Popup() {}
 
 	virtual void drawSelf();

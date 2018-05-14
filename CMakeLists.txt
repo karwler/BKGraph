@@ -1,7 +1,7 @@
 # project properties
 cmake_minimum_required(VERSION 3.1.3)
 project(BKGraph LANGUAGES CXX)
-set(CMAKE_BUILD_TYPE "Release")
+#set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_CONFIGURATION_TYPES "Debug" "Release")
 
 # source files
@@ -16,17 +16,15 @@ set(SRC_FILES
 	"src/engine/windowSys.h"
 	"src/engine/world.cpp"
 	"src/engine/world.h"
+	"src/prog/defaults.h"
 	"src/prog/program.cpp"
 	"src/prog/program.h"
 	"src/prog/progs.cpp"
 	"src/prog/progs.h"
-	"src/utils/defaults.h"
 	"src/utils/functions.cpp"
 	"src/utils/functions.h"
 	"src/utils/parser.cpp"
-	"src/utils/parser.h"
-	"src/utils/settings.cpp"
-	"src/utils/settings.h"
+        "src/utils/parser.h"
 	"src/utils/utils.cpp"
 	"src/utils/utils.h"
 	"src/utils/vec2.h"
@@ -125,4 +123,3 @@ foreach(source IN LISTS SRC_FILES)
 	endif()
 	source_group("${filter_path}" FILES ${source})
 endforeach()
-
