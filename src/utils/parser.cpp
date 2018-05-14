@@ -21,7 +21,7 @@ Subfunction* Parser::createTree(const string& function) {
 		if (pcnt != 0)
 			throw id;
 	} catch (sizt e) {
-		cerr << "syntax error at " << e << endl;
+		cerr << "Syntax error at " << e << endl;
 		return nullptr;
 	}
 

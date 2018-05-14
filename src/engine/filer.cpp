@@ -45,13 +45,13 @@ string Settings::getViewportString() const {
 void Settings::setViewport(const string& line) {
 	vector<vec2t> elems = getWords(line);
 	if (elems.size() >= 1)
-		viewPos.x = stod(line.substr(elems[0].l, elems[0].u));
+		viewPos.x = stof(line.substr(elems[0].l, elems[0].u));
 	if (elems.size() >= 2)
-		viewPos.y = stod(line.substr(elems[1].l, elems[1].u));
+		viewPos.y = stof(line.substr(elems[1].l, elems[1].u));
 	if (elems.size() >= 3)
-		viewSize.x = stod(line.substr(elems[2].l, elems[2].u)) - viewPos.x;
+		viewSize.x = stof(line.substr(elems[2].l, elems[2].u)) - viewPos.x;
 	if (elems.size() >= 4)
-		viewSize.y = stod(line.substr(elems[3].l, elems[3].u)) - viewPos.y;
+		viewSize.y = stof(line.substr(elems[3].l, elems[3].u)) - viewPos.y;
 }
 
 int Settings::getRendererIndex() {
@@ -260,7 +260,7 @@ bool Filer::readTextFile(const string& file, vector<string>& lines) {
 bool Filer::writeTextFile(const string& file, const vector<string>& lines) {
 	std::ofstream ofs(file.c_str());
 	if (!ofs.good()) {
-		cerr << "couldn't write file " << file << endl;
+		cerr << "Couldn't write file " << file << endl;
 		return false;
 	}
 
@@ -273,7 +273,7 @@ vector<string> Filer::listDir(const string& dir, FileType filter) {
 	vector<string> entries;
 #ifdef _WIN32
 	WIN32_FIND_DATAW data;
-	HANDLE hFind = FindFirstFileW(stow(dir+"*").c_str(), &data);
+	HANDLE hFind = FindFirstFileW(stow(appendDsep(dir) + "*").c_str(), &data);
 	if (hFind == INVALID_HANDLE_VALUE)
 		return entries;
 
@@ -303,7 +303,7 @@ vector<string> Filer::listDirRecursively(string dir) {
 	vector<string> entries;
 #ifdef _WIN32
 	WIN32_FIND_DATAW data;
-	HANDLE hFind = FindFirstFileW(stow(dir+"*").c_str(), &data);
+	HANDLE hFind = FindFirstFileW(stow(dir + "*").c_str(), &data);
 	if (hFind == INVALID_HANDLE_VALUE)
 		return entries;
 

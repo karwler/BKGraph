@@ -193,7 +193,7 @@ private:
 	string oldText;
 
 	virtual vec2i textPos() const;
-	void setCPos(int cp);
+	void setCPos(sizt cp);
 	int caretPos() const;	// caret's relative x position
 	void checkTextOffset();
 

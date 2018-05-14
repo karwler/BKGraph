@@ -374,7 +374,7 @@ vec2i LineEdit::textPos() const {
 	return vec2i(pos.x + textOfs + Default::textOffset, pos.y);
 }
 
-void LineEdit::setCPos(int cp) {
+void LineEdit::setCPos(sizt cp) {
 	cpos = cp;
 	checkTextOffset();
 }

@@ -43,9 +43,9 @@ bool Context::onClick(const vec2i& mPos, uint8 mBut) {
 }
 
 SDL_Rect Context::rect() const {
-	return {position.x, position.y, width, Default::itemHeight * items.size()};
+	return {position.x, position.y, width, Default::itemHeight * int(items.size())};
 }
 
 SDL_Rect Context::itemRect(sizt id) const {
-	return {position.x, position.y + id * Default::itemHeight, items[id].getSize().x, items[id].getSize().y};
+	return {position.x, position.y + int(id) * Default::itemHeight, items[id].getSize().x, items[id].getSize().y};
 }

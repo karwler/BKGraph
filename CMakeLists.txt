@@ -24,7 +24,7 @@ set(SRC_FILES
 	"src/utils/functions.cpp"
 	"src/utils/functions.h"
 	"src/utils/parser.cpp"
-        "src/utils/parser.h"
+	"src/utils/parser.h"
 	"src/utils/utils.cpp"
 	"src/utils/utils.h"
 	"src/utils/vec2.h"
@@ -74,9 +74,9 @@ target_compile_features(BKGraph PUBLIC cxx_aggregate_default_initializers cxx_al
 #set_target_properties(BKGraph PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
 
 # set include directories and link libraries
-target_include_directories(BKGraph PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+include_directories(BKGraph PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	target_include_directories(BKGraph PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	include_directories(BKGraph PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/include)
 endif()
 target_link_libraries(BKGraph SDL2 SDL2_image SDL2_ttf)
 

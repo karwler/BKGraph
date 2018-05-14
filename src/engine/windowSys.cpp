@@ -24,7 +24,7 @@ void WindowSys::init() {
 	if (TTF_Init())
 		throw "Couldn't initialize fonts:\n" + string(SDL_GetError());
 	if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG))
-		cerr << "couldn't initialize PNGs:" << endl << IMG_GetError() << endl;
+		cerr << "Couldn't initialize PNGs:" << endl << IMG_GetError() << endl;
 	SDL_StopTextInput();	// for some reason TextInput is on
 
 	sets = Filer::loadSettings();
