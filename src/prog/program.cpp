@@ -2,8 +2,7 @@
 
 // PROGRAM
 
-Program::Program()
-{
+Program::Program() {
 	funcs = Filer::loadUsers(vars);
 	parser.updateVars(vars);
 }
@@ -20,27 +19,27 @@ void Program::init(ProgState* initState) {
 	setState(initState);
 }
 
-void Program::eventClosePopup(Button* but) {
+void Program::eventClosePopup(Button*) {
 	World::scene()->setPopup(nullptr);
 }
 
-void Program::eventOpenFuncs(Button* but) {
+void Program::eventOpenFuncs(Button*) {
 	setState(new ProgFuncs);
 }
 
-void Program::eventOpenVars(Button* but) {
+void Program::eventOpenVars(Button*) {
 	setState(new ProgVars);
 }
 
-void Program::eventOpenGraph(Button* but) {
+void Program::eventOpenGraph(Button*) {
 	setState(new ProgGraph);
 }
 
-void Program::eventOpenSettings(Button* but) {
+void Program::eventOpenSettings(Button*) {
 	setState(new ProgSettings);
 }
 
-void Program::eventExit(Button* but) {
+void Program::eventExit(Button*) {
 	World::winSys()->close();
 }
 
@@ -71,39 +70,37 @@ void Program::eventOpenContextFunction(Button* but) {
 	World::scene()->setContext(new Context(items, but, WindowSys::mousePos()));
 }
 
-void Program::eventAddFunction(ContextItem* item) {
+void Program::eventAddFunction(ContextItem*) {
 	funcs.push_back(Function());
 	World::scene()->resetLayout();
 }
 
-void Program::eventDelFunction(ContextItem* item) {
+void Program::eventDelFunction(ContextItem*) {
 	sizt id = World::scene()->getContext()->getWidget()->getParent()->getID();
 	funcs[id].clear();
-	funcs.erase(funcs.begin() + id);
-
+	funcs.erase(funcs.begin() + pdft(id));
 	World::scene()->resetLayout();
 }
 
 void Program::eventGraphColorPickRed(Button* but) {
-	static_cast<ColorBox*>(static_cast<Layout*>(World::scene()->getPopup()->getWidget(4))->getWidget(0))->color.r = static_cast<Slider*>(but)->getVal();
+	static_cast<ColorBox*>(static_cast<Layout*>(World::scene()->getPopup()->getWidget(4))->getWidget(0))->color.r = uint8(static_cast<Slider*>(but)->getVal());
 }
 
 void Program::eventGraphColorPickGreen(Button* but) {
-	static_cast<ColorBox*>(static_cast<Layout*>(World::scene()->getPopup()->getWidget(4))->getWidget(0))->color.g = static_cast<Slider*>(but)->getVal();
+	static_cast<ColorBox*>(static_cast<Layout*>(World::scene()->getPopup()->getWidget(4))->getWidget(0))->color.g = uint8(static_cast<Slider*>(but)->getVal());
 }
 
 void Program::eventGraphColorPickBlue(Button* but) {
-	static_cast<ColorBox*>(static_cast<Layout*>(World::scene()->getPopup()->getWidget(4))->getWidget(0))->color.b = static_cast<Slider*>(but)->getVal();
+	static_cast<ColorBox*>(static_cast<Layout*>(World::scene()->getPopup()->getWidget(4))->getWidget(0))->color.b = uint8(static_cast<Slider*>(but)->getVal());
 }
 
 void Program::eventGraphColorPickAlpha(Button* but) {
-	static_cast<ColorBox*>(static_cast<Layout*>(World::scene()->getPopup()->getWidget(4))->getWidget(0))->color.a = static_cast<Slider*>(but)->getVal();
+	static_cast<ColorBox*>(static_cast<Layout*>(World::scene()->getPopup()->getWidget(4))->getWidget(0))->color.a = uint8(static_cast<Slider*>(but)->getVal());
 }
 
 void Program::eventGraphColorPickConfirm(Button* but) {
 	sizt id = static_cast<Widget*>(but->data)->getParent()->getID();	// get fucntion id through data from ok button which is a pointer to the ColorBox that was clicked to open the color pick popup which's parent's id can be used as the funciton's id
 	funcs[id].color = static_cast<ColorBox*>(static_cast<Layout*>(World::scene()->getPopup()->getWidget(4))->getWidget(0))->color;
-	
 	World::scene()->resetLayout();
 }
 
@@ -120,7 +117,6 @@ void Program::eventVarRename(Button* but) {
 void Program::eventVarRevalue(Button* but) {
 	const string& key = static_cast<LineEdit*>(but->getParent()->getWidget(0))->getText();
 	double val = stod(static_cast<LineEdit*>(but)->getText());
-
 	vars[key] = val;
 	parser.updateVars(vars);
 }
@@ -133,7 +129,7 @@ void Program::eventOpenContextVariable(Button* but) {
 	World::scene()->setContext(new Context(items, but, WindowSys::mousePos()));
 }
 
-void Program::eventAddVariable(ContextItem* item) {
+void Program::eventAddVariable(ContextItem*) {
 	string name = "a";
 	while (!wordValid(name)) {	// find name for new variable
 		if (name.back() == 'z')
@@ -147,19 +143,17 @@ void Program::eventAddVariable(ContextItem* item) {
 	}
 	vars.insert(make_pair(name, 0.f));
 	parser.updateVars(vars);
-	
 	World::scene()->resetLayout();
 }
 
-void Program::eventDelVariable(ContextItem* item) {
+void Program::eventDelVariable(ContextItem*) {
 	const string& key = static_cast<LineEdit*>(World::scene()->getContext()->getWidget()->getParent()->getWidget(0))->getText();
 	vars.erase(key);
 	parser.updateVars(vars);
-
 	World::scene()->resetLayout();
 }
 
-void Program::eventGetYConfirm(Button* but) {
+void Program::eventGetYConfirm(Button*) {
 	sizt fid = static_cast<Graph*>(static_cast<GraphView*>(World::scene()->getLayout()->getWidget(1))->data)->fid;
 	const string& xstr = static_cast<LineEdit*>(World::scene()->getPopup()->getWidget(1))->getText();
 
@@ -181,9 +175,9 @@ void Program::eventSettingFullscreen(Button* but) {
 }
 
 void Program::eventSettingRendererOpen(Button* but) {
-	vector<ContextItem> items(SDL_GetNumRenderDrivers());
-	for (int i=0; i<items.size(); i++)
-		items[i] = ContextItem(getRendererName(i), &Program::eventSettingRendererPick);
+	vector<ContextItem> items((uint(SDL_GetNumRenderDrivers())));
+	for (uint i=0; i<items.size(); i++)
+		items[i] = ContextItem(getRendererName(int(i)), &Program::eventSettingRendererPick);
 	World::scene()->setContext(new Context(items, but, but->position(), but->size().x));
 }
 
@@ -196,7 +190,7 @@ void Program::eventSettingScrollSpeed(Button* but) {
 	World::winSys()->setScrollSpeed(stoi(static_cast<LineEdit*>(but)->getText()));
 }
 
-void Program::eventSettingReset(Button* but) {
+void Program::eventSettingReset(Button*) {
 	World::winSys()->resetSettings();
 	World::scene()->resetLayout();
 }

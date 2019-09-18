@@ -3,30 +3,42 @@
 #include "prog/defaults.h"
 
 // string stuff
+
 bool strcmpCI(const string& sa, const string& sb);
 vector<vec2t> getWords(const string& line, char spacer=' ');	// returns index of first character and length of words in line
-string getRendererName(int id);
 
-// path string functions
-bool isAbsolute(const string& path);
-string appendDsep(const string& path);	// append directory separator if necessary
-string parentDir(const string& path);
-string filename(const string& path);	// get filename from path
-bool hasExt(const string& path);
-bool hasExt(const string& path, const string& ext);	// whether file has the extension ext
-string delExt(const string& path);	// returns filepath without extension
-
-// parser string stuff
 inline bool isDigit(char c) { return c >= '0' && c <= '9'; }
 inline bool isNumber(char c) { return isDigit(c) || c == '.'; }
 inline bool isSmallLetter(char c) { return c >= 'a' && c <= 'z'; }
 inline bool isCapitalLetter(char c) { return c >= 'A' && c <= 'Z'; }
 inline bool isLetter(char c) { return isCapitalLetter(c) || isSmallLetter(c) || c == '_'; }
 inline bool isOperator(char c) { return c == '+' || c == '-' || c == '*' || c == '/' || c == '^'; }
+inline bool isSpace(char c) { return (c > '\0' && c <= ' ') || c == 0x7F; }
+
+inline bool isDsep(char c) {
+#ifdef _WIN32
+	return c == '\\' || c == '/';
+#else
+	return c == '/';
+#endif
+}
+
+inline bool isAbsolute(const string& path) {
+#ifdef _WIN32
+	return (path.length() >= 1 && isDsep(path[0])) || (path.length() >= 3 && isCapitalLetter(path[0]) && path[1] == ':' && isDsep(path[2]));
+#else
+	return path.length() >= 1 && isDsep(path[0]);
+#endif
+}
+
+inline string getRendererName(int id) {
+	SDL_RendererInfo info;
+	SDL_GetRenderDriverInfo(id, &info);
+	return info.name;
+}
 
 // conversions
-string wtos(const wstring& wstr);
-wstring stow(const string& str);
+
 inline bool stob(const string& str) { return str == "true" || str == "1"; }
 inline string btos(bool b) { return b ? "true" : "false"; }
 
@@ -38,6 +50,7 @@ string ntos(T num) {
 }
 
 // basic maths
+
 template <typename T>
 T factorial(T n) {
 	for (T i=std::trunc(n)-T(1); i>T(1); i--)
@@ -53,16 +66,20 @@ inline double dNeg(double a) { return -a; }
 inline double dFac(double a) { return factorial(a); }
 
 // geometry?
-SDL_Rect cropRect(SDL_Rect& rect, const SDL_Rect& frame);	// crop rect so it fits in the frame (aka set rect to the area where they overlap) and return how much was cut off
-SDL_Rect overlapRect(SDL_Rect rect, const SDL_Rect& frame);	// same as above except it returns the overlap instead of the crop
+
 bool cropLine(vec2i& pos, vec2i& end, const SDL_Rect& rect);	// crops line to frame. returns whether line overlaps rect
+
+inline SDL_Rect overlapRect(const SDL_Rect& rect, const SDL_Rect& frame) {	// same as cropRect except it returns the overlap instead of the crop
+	SDL_Rect isct;
+	return SDL_IntersectRect(&rect, &frame, &isct) ? isct : SDL_Rect({0, 0, 0, 0});
+}
 
 inline vec2i rectEnd(const SDL_Rect& rect) {
 	return vec2i(rect.x + rect.w - 1, rect.y + rect.h - 1);
 }
 
 inline bool inRect(const vec2i& point, const SDL_Rect& rect) {	// check if point is in rect
-	return point.x >= rect.x && point.x < rect.x + rect.w && point.y >= rect.y && point.y < rect.y + rect.h;
+	return SDL_PointInRect(reinterpret_cast<const SDL_Point*>(&point), &rect);
 }
 
 template <typename T>	// convert dot from coordinate system to pixels in window

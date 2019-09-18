@@ -29,9 +29,8 @@ private:
 	uptr<Layout> layout;	// the main layout (should never be nullptr)
 	uptr<Popup> popup;
 	uptr<Context> context;
-
 	vector<Widget*> focused;	// list of widgets over which the mouse is currently positioned
-	
+
 	void setFocused(const vec2i& mPos);		// resets focused
 	void updateFocused(const vec2i& mPos);	// optimized version of setFocused for when mouse is moved by the user
 	void setFocusedElement(const vec2i& mPos, Layout* box);	// for appending elements to focused

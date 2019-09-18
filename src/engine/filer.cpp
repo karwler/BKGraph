@@ -1,13 +1,7 @@
 #include "filer.h"
 #include <fstream>
-#include <algorithm>
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <unistd.h>
-#include <dirent.h>
-#include <sys/stat.h>
-#endif
+#include <filesystem>
+namespace fs = std::filesystem;
 
 // SETTINGS
 
@@ -17,9 +11,9 @@ Settings::Settings(bool MAX, bool FSC, const vec2i& RES, const vec2f& VPS, const
 	resolution(RES),
 	viewPos(VPS),
 	viewSize(VSZ),
+	font(FNT),
 	renderer(RND),
-	scrollSpeed(SSP),
-	font(FNT)
+	scrollSpeed(SSP)
 {}
 
 string Settings::getResolutionString() const {
@@ -74,14 +68,14 @@ IniLine::IniLine() :
 IniLine::IniLine(const string& ARG, const string& VAL) :
 	type(Type::argVal),
 	arg(ARG),
-	val(VAL) 
+	val(VAL)
 {}
 
 IniLine::IniLine(const string& ARG, const string& KEY, const string& VAL) :
 	type(Type::argKeyVal),
 	arg(ARG),
 	key(KEY),
-	val(VAL) 
+	val(VAL)
 {}
 
 IniLine::IniLine(const string& TIT) :
@@ -162,12 +156,20 @@ void IniLine::clear() {
 
 // FILER
 
-const string Filer::dirExec = Filer::getDirExec();
+string Filer::dirExec;
+vector<string> Filer::dirFonts;
+
+void Filer::init() {
+	if (char* path = SDL_GetBasePath()) {
+		dirExec = path;
+		SDL_free(path);
+	}
 #ifdef _WIN32
-const vector<string> Filer::dirFonts = {Filer::dirExec, string(std::getenv("SystemDrive")) + "\\Windows\\Fonts\\"};
+	dirFonts = {Filer::dirExec, string(std::getenv("SystemDrive")) + "\\Windows\\Fonts\\"};
 #else
-const vector<string> Filer::dirFonts = {Filer::dirExec, "/usr/share/fonts/", string(std::getenv("HOME")) + "/.fonts/"};
+	dirFonts = {Filer::dirExec, "/usr/share/fonts/", string(std::getenv("HOME")) + "/.fonts/"};
 #endif
+}
 
 Settings Filer::loadSettings() {
 	Settings sets;
@@ -235,7 +237,7 @@ vector<Function> Filer::loadUsers(map<string, double>& vars) {
 
 void Filer::saveUsers(const vector<Function>& funcs, const map<string, double>& vars) {
 	vector<string> lines;
-	for (const pair<string, double>& it : vars)
+	for (const pair<const string, double>& it : vars)
 		lines.push_back(IniLine(Default::iniKeywordVariable, it.first, ntos(it.second)).line());
 
 	for (const Function& it : funcs) {
@@ -269,116 +271,21 @@ bool Filer::writeTextFile(const string& file, const vector<string>& lines) {
 	return true;
 }
 
-vector<string> Filer::listDir(const string& dir, FileType filter) {
-	vector<string> entries;
-#ifdef _WIN32
-	WIN32_FIND_DATAW data;
-	HANDLE hFind = FindFirstFileW(stow(appendDsep(dir) + "*").c_str(), &data);
-	if (hFind == INVALID_HANDLE_VALUE)
-		return entries;
-
-	do {
-		if (wcscmp(data.cFileName, L".") && wcscmp(data.cFileName, L".."))	// ignore . and ..
-			if ((!(data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (filter & FTYPE_FILE)) || ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (filter & FTYPE_DIR)))
-				entries.push_back(wtos(data.cFileName));
-	} while (FindNextFileW(hFind, &data));
-	FindClose(hFind);
-#else
-	DIR* directory = opendir(dir.c_str());
-	if (!directory)
-		return entries;
-
-	while (dirent* data = readdir(directory))
-		if (strcmp(data->d_name, ".") && strcmp(data->d_name, ".."))	// ignore . and ..
-			if ((data->d_type != DT_DIR && (filter & FTYPE_FILE)) || (data->d_type == DT_DIR && (filter & FTYPE_DIR)))
-				entries.push_back(data->d_name);
-	closedir(directory);
-#endif
-	std::sort(entries.begin(), entries.end());
-	return entries;
-}
-
-vector<string> Filer::listDirRecursively(string dir) {
-	dir = appendDsep(dir);
-	vector<string> entries;
-#ifdef _WIN32
-	WIN32_FIND_DATAW data;
-	HANDLE hFind = FindFirstFileW(stow(dir + "*").c_str(), &data);
-	if (hFind == INVALID_HANDLE_VALUE)
-		return entries;
-
-	do {
-		if (!(wcscmp(data.cFileName, L".") && wcscmp(data.cFileName, L"..")))	// ignore . and ..
-			continue;
-
-		if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {	// append subdirectoy's files to entries
-			vector<string> newEs = listDirRecursively(dir + wtos(data.cFileName));
-			entries.insert(entries.end(), newEs.begin(), newEs.end());
-		} else
-			entries.push_back(dir + wtos(data.cFileName));
-	} while (FindNextFileW(hFind, &data));
-	FindClose(hFind);
-#else
-	DIR* directory = opendir(dir.c_str());
-	if (!directory)
-		return entries;
-
-	while (dirent* data = readdir(directory)) {
-		if (!(strcmp(data->d_name, ".") && strcmp(data->d_name, "..")))	// ignore . and ..
-			continue;
-
-		if (data->d_type == DT_DIR) {	// append subdirectoy's files to entries
-			vector<string> newEs = listDirRecursively(dir + data->d_name);
-			entries.insert(entries.end(), newEs.begin(), newEs.end());
-		} else
-			entries.push_back(dir + data->d_name);
-	}
-	closedir(directory);
-#endif
-	return entries;
-}
-
-FileType Filer::fileType(const string& path) {
-#ifdef _WIN32
-	DWORD attrib = GetFileAttributesW(stow(path).c_str());
-	if (attrib == INVALID_FILE_ATTRIBUTES)
-		return FTYPE_NONE;
-	if (attrib & FILE_ATTRIBUTE_DIRECTORY)
-		return FTYPE_DIR;
-#else
-	struct stat ps;
-	if (stat(path.c_str(), &ps))
-		return FTYPE_NONE;
-	if (S_ISDIR(ps.st_mode))
-		return FTYPE_DIR;
-#endif
-	return FTYPE_FILE;
-}
-
 string Filer::findFont(const string& font) {
-	if (isAbsolute(font) && fileType(font) == FTYPE_FILE)	// check if font refers to a file
+	if (isAbsolute(font) && fs::is_regular_file(font))	// check if font refers to a file
 		return font;
 
-	for (const string& dir : dirFonts)	// check font directories
-		for (string& it : listDirRecursively(dir))
-			if (strcmpCI(hasExt(it) ? delExt(filename(it)) : filename(it), font))
-				return it;
+	for (const string& dir : dirFonts) {	// check font directories
+		try {
+			for (fs::recursive_directory_iterator it(dir, fs::directory_options::follow_directory_symlink | fs::directory_options::skip_permission_denied), end; it != end; it++)
+				if (it->is_regular_file())
+					if (string name = it->path().filename().string(); strcmpCI(string(name.begin(), name.end() - pdft(it->path().extension().string().length())), font))
+						return it->path().string();
+		} catch (const fs::filesystem_error& e) {
+			cerr << e.what() << endl;
+		}
+	}
 	return "";	// nothing found
-}
-
-string Filer::getDirExec() {
-	string path;
-#ifdef _WIN32
-	wchar buffer[MAX_PATH];
-	GetModuleFileNameW(0, buffer, MAX_PATH);
-	path = wtos(buffer);
-#else
-	char buffer[PATH_MAX];
-	int len = readlink("/proc/self/exe", buffer, PATH_MAX-1);
-	buffer[len] = '\0';
-	path = buffer;
-#endif
-	return parentDir(path);
 }
 
 std::istream& Filer::readLine(std::istream& ifs, string& str) {

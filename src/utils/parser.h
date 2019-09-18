@@ -17,7 +17,6 @@ private:
 	umap<string, double> vars;	// merge of Default::parserConsts and Program::vars
 	string func;	// pointer to the function
 	sizt id;		// for iterating through func
-	int pcnt;		// for counting opening and closing parentheses
 
 	void checkFirst();
 	void checkNumber();
@@ -26,7 +25,7 @@ private:
 	void checkOperator();
 	void checkParOpen();
 	void checkParClose();
-	
+
 	Subfunction* readAddSub();
 	Subfunction* readMulDiv();
 	Subfunction* readPower();

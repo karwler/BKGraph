@@ -3,20 +3,6 @@
 #include "utils/functions.h"
 #include "utils/utils.h"
 
-enum FileType : uint8 {
-	FTYPE_NONE = 0x0,
-	FTYPE_FILE = 0x1,
-	FTYPE_DIR  = 0x2,
-	FTYPE_ANY  = 0xFF
-};
-inline FileType operator~(FileType a) { return static_cast<FileType>(~static_cast<uint8>(a)); }
-inline FileType operator&(FileType a, FileType b) { return static_cast<FileType>(static_cast<uint8>(a) & static_cast<uint8>(b)); }
-inline FileType operator&=(FileType& a, FileType b) { return a = static_cast<FileType>(static_cast<uint8>(a) & static_cast<uint8>(b)); }
-inline FileType operator^(FileType a, FileType b) { return static_cast<FileType>(static_cast<uint8>(a) ^ static_cast<uint8>(b)); }
-inline FileType operator^=(FileType& a, FileType b) { return a = static_cast<FileType>(static_cast<uint8>(a) ^ static_cast<uint8>(b)); }
-inline FileType operator|(FileType a, FileType b) { return static_cast<FileType>(static_cast<uint8>(a) | static_cast<uint8>(b)); }
-inline FileType operator|=(FileType& a, FileType b) { return a = static_cast<FileType>(static_cast<uint8>(a) | static_cast<uint8>(b)); }
-
 // collection of values that are gonna be saved to a file
 class Settings {
 public:
@@ -73,6 +59,8 @@ private:
 // handles all filesystem interactions
 class Filer {
 public:
+	static void init();
+
 	static Settings loadSettings();	// read settings file
 	static void saveSettings(const Settings& sets);	// write settings file
 	static vector<Function> loadUsers(map<string, double>& vars);	// read functinos and variables from file
@@ -80,16 +68,11 @@ public:
 
 	static bool readTextFile(const string& file, vector<string>& lines);	// returns true on success
 	static bool writeTextFile(const string& file, const vector<string>& lines);	// returns true on success
-	static vector<string> listDir(const string& dir, FileType filter=FTYPE_ANY);
-	static vector<string> listDirRecursively(string dir);
-	static FileType fileType(const string& path);
-
 	static string findFont(const string& font);	// on success returns absolute path to font file, otherwise returns empty path
-	
-	static const string dirExec;	// directory in which the executable should currently be
-	static const vector<string> dirFonts;	// os's font directories
 
+	static string dirExec;	// directory in which the executable should currently be
 private:
-	static string getDirExec();		// for setting dirExec
+	static vector<string> dirFonts;	// os's font directories
+
 	static std::istream& readLine(std::istream& ifs, string& str);
 };

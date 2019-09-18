@@ -9,17 +9,12 @@ void Parser::updateVars(const map<string, double>& pvars) {
 Subfunction* Parser::createTree(const string& function) {
 	// set and format function string
 	func = function;
-	for (id=0; id<func.length(); id++)	// remove whitespaces
-		if (func[id] == ' ')
-			func.erase(id--);
+	func.erase(std::remove_if(func.begin(), func.end(), isSpace), func.end());
 
 	// check if syntax is correct
 	id = 0;
-	pcnt = 0;
 	try {
 		checkFirst();
-		if (pcnt != 0)
-			throw id;
 	} catch (sizt e) {
 		cerr << "Syntax error at " << e << endl;
 		return nullptr;
@@ -50,7 +45,6 @@ void Parser::checkNumber() {
 		while (isDigit(func[++id]));
 	if (func[id] == '.')
 		while (isDigit(func[++id]));
-
 	checkVar();
 }
 
@@ -95,15 +89,11 @@ void Parser::checkOperator() {
 
 void Parser::checkParOpen() {
 	id++;
-	pcnt++;
-
 	checkFirst();
 }
 
 void Parser::checkParClose() {
 	id++;
-	pcnt--;
-
 	checkVar();
 }
 
@@ -146,6 +136,8 @@ Subfunction* Parser::readFirst() {
 		ret = readParentheses();
 	else if (func[id] == '-')
 		ret = new SubfunctionF1(dNeg, readFirst());
+	else
+		throw std::runtime_error("missing content");
 
 	for (; func[id] == '!'; id++)
 		ret = new SubfunctionF1(dFac, ret);
@@ -164,7 +156,7 @@ Subfunction* Parser::readNumber() {
 	if (func[id] != '.')
 		for (; isDigit(func[id]); id++)
 			res = res*10.0 + double(func[id] - '0');
-	
+
 	if (func[id] == '.') {
 		double fact = 1.0;
 		while (isDigit(func[++id])) {

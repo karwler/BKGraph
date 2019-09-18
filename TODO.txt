@@ -1,12 +1,9 @@
-﻿Features:
+Features:
 - ¯\_(ツ)_/¯
 
 Optional:
 - save/load functions and variables
 - scale label x size to text's x size
-- highlight on mouse over
-- multiple languages
-- multiple themes
 - mingw support
 
 Fixes

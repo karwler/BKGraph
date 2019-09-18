@@ -55,7 +55,7 @@ Popup* ProgState::createPopupColorPick(SDL_Color color, Button* clickedBox) {
 	vector<Widget*> lns(num);
 	for (sizt i=0; i<num; i++)
 		lns[i] = new Layout(lx[i], linesHeight, false);
-	return new Popup(lns, vec2<Size>(400, 300));
+	return new Popup(lns, vec2<Size>(400, linesHeight * int(num) + Default::spacing * int(num - 1)));
 }
 
 // PROG FUNCS
@@ -111,7 +111,7 @@ Layout* ProgVars::createLayout() {
 	};
 
 	vector<Widget*> lns;
-	for (const pair<string, double>& it : World::program()->getVariables()) {
+	for (const pair<const string, double>& it : World::program()->getVariables()) {
 		vector<Widget*> ims {
 			new LineEdit(it.first, &Program::eventVarRename, &Program::eventOpenContextVariable),
 			new Label("=", nullptr, &Program::eventOpenContextVariable, 0.1f, Label::Alignment::center),

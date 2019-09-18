@@ -66,8 +66,8 @@ void Scene::resetLayout() {
 
 	// set stuff up
 	layout.reset(World::state()->createLayout());
-	setFocused(WindowSys::mousePos());
 	layout->postInit();
+	setFocused(WindowSys::mousePos());
 }
 
 void Scene::setPopup(Popup* newPopup, Widget* newCapture) {
@@ -79,7 +79,7 @@ void Scene::setPopup(Popup* newPopup, Widget* newCapture) {
 	capture = newCapture;
 	if (capture)
 		capture->onClick(WindowSys::mousePos(), SDL_BUTTON_LEFT);
-	
+
 	setFocused(WindowSys::mousePos());
 }
 
@@ -114,8 +114,8 @@ void Scene::updateFocused(const vec2i& mPos) {
 
 	// get rid of widgets not overlapping with mouse position
 	if (i < focused.size())
-		focused.erase(focused.begin() + i, focused.end());
-	
+		focused.erase(focused.begin() + pdft(i), focused.end());
+
 	// append new widgets if possible
 	if (Layout* lay = dynamic_cast<Layout*>(focused.back()))
 		setFocusedElement(mPos, lay);

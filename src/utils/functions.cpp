@@ -74,7 +74,7 @@ void Function::set(const string& line) {
 			i++;
 
 		if (i < line.length())
-			clr[c] = stoi(line.substr(start, i-start));
+			clr[c] = uint8(stoi(line.substr(start, i-start)));
 	}
 	color = {clr[0], clr[1], clr[2], clr[3]};
 

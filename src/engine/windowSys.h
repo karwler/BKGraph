@@ -12,7 +12,7 @@ public:
 
 	int start();
 	void close() { run = false; }
-	
+
 	vec2i resolution() const;
 	static vec2i mousePos();
 
@@ -35,10 +35,9 @@ private:
 	uptr<Scene> scene;
 	uptr<DrawSys> drawSys;
 	SDL_Window* window;
-
 	Settings sets;
 	bool run;		// whether the loop in which the program runs should continue
-	
+
 	void init();
 	void exec();
 	void cleanup();

@@ -50,7 +50,7 @@ public:
 	SDL_Rect barRect() const;
 	SDL_Rect sliderRect() const;
 	vec2t visibleWidgets() const;	// returns indexes of first and one after last visible widget
-	
+
 private:
 	int listPos;
 	int diffSliderMouse;	// space between slider and mouse y position while dragging slider

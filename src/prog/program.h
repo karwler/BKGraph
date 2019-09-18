@@ -43,7 +43,7 @@ public:
 
 	// graph view
 	void eventGetYConfirm(Button* but);
-	
+
 	// settings view
 	void eventSettingViewport(Button* but);
 	void eventSettingFullscreen(Button* but);

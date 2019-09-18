@@ -1,12 +1,15 @@
 #pragma once
 
 // stuff that'll be used pretty much everywhere
+#ifdef _WIN32
+#include <SDL.h>
+#include <SDL_ttf.h>
+#else
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
-
+#endif
 #include "utils/vec2.h"
-
+#include <algorithm>
 #include <cstdint>
 #include <iostream>
 #include <string>
@@ -50,6 +53,7 @@ using uint32 = uint32_t;
 using int64 = int64_t;
 using uint64 = uint64_t;
 using sizt = size_t;
+using pdft = ptrdiff_t;
 
 using char16 = char16_t;
 using char32 = char32_t;
@@ -73,13 +77,6 @@ using mf2ptr = double (*)(double, double);	// math function (two args) pointer
 class Program;
 class Widget;
 class Layout;
-
-// directory separator
-#ifdef _WIN32
-const char dsep = '\\';
-#else
-const char dsep = '/';
-#endif
 
 // default constants
 namespace Default {
@@ -121,7 +118,7 @@ const SDL_Color colorGraph = {255, 255, 255, 255};
 const SDL_Color colorPopupDim = {0, 0, 0, 127};
 
 // files and directories
-const char fileIcon[] = "icon.png";
+const char fileIcon[] = "icon.bmp";
 const char fileSettings[] = "settings.ini";
 const char fileUsers[] = "users.ini";
 

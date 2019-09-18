@@ -18,24 +18,27 @@ char intersect(vec2<T>& in, vec2<T>& im, const vec2<T>& ap, const vec2<T>& av, c
 
 template <typename T>
 struct vec2 {
+	vec2(const vec2& V) = default;
+
 	vec2(const T& N=T(0)) :
 		x(N), y(N)
 	{}
 
-	vec2(const T& X, const T& Y) :
-		x(X), y(Y)
+	template <typename A, typename B>
+	vec2(const A& X, const B& Y) :
+		x(T(X)), y(T(Y))
 	{}
 
 	template <typename A>
 	vec2(const vec2<A>& V) :
-		x(V.x), y(V.y)
+		x(T(V.x)), y(T(V.y))
 	{}
-	
-	T& operator[](char i) {
+
+	T& operator[](int i) {
 		return reinterpret_cast<T*>(this)[i];
 	}
 
-	const T& operator[](char i) const {
+	const T& operator[](int i) const {
 		return reinterpret_cast<T*>(this)[i];
 	}
 
@@ -90,18 +93,6 @@ struct vec2 {
 	vec2& operator^=(const vec2& v) {
 		x ^= v.x;
 		y ^= v.y;
-		return *this;
-	}
-
-	vec2& operator<<=(const vec2& v) {
-		x <<= v.x;
-		y <<= v.y;
-		return *this;
-	}
-
-	vec2& operator>>=(const vec2& v) {
-		x >>= v.x;
-		y >>= v.y;
 		return *this;
 	}
 
@@ -295,36 +286,6 @@ vec2<T> operator^(const vec2<T>& a, const T& b) {
 template <typename T>
 vec2<T> operator^(const T& a, const vec2<T>& b) {
 	return vec2<T>(a ^ b.x, a ^ b.y);
-}
-
-template <typename T>
-vec2<T> operator<<(const vec2<T>& a, const vec2<T>& b) {
-	return vec2<T>(a.x << b.x, a.y << b.y);
-}
-
-template <typename T>
-vec2<T> operator<<(const vec2<T>& a, const T& b) {
-	return vec2<T>(a.x << b, a.y << b);
-}
-
-template <typename T>
-vec2<T> operator<<(const T& a, const vec2<T>& b) {
-	return vec2<T>(a << b.x, a << b.y);
-}
-
-template <typename T>
-vec2<T> operator>>(const vec2<T>& a, const vec2<T>& b) {
-	return vec2<T>(a.x >> b.x, a.y >> b.y);
-}
-
-template <typename T>
-vec2<T> operator>>(const vec2<T>& a, const T& b) {
-	return vec2<T>(a.x >> b, a.y >> b);
-}
-
-template <typename T>
-vec2<T> operator>>(const T& a, const vec2<T>& b) {
-	return vec2<T>(a >> b.x, a >> b.y);
 }
 
 template <typename T>

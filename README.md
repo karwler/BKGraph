@@ -1,16 +1,14 @@
 # BKGraph
 A simple desktop application for displaying functions as graphs.  
 It runs on Linux and Windows 7 or later.  
-Used libraries are SDL2, SDL2_image, SDL2_ttf and any libraries that come with them.  
+Used libraries are SDL2, SDL2_ttf and any libraries that come with them.  
 
 ## Installation
 
 ### Requirements:
-- CMake (unless your IDE can interpret CMakeLists.txt)  
-- C++ compiler (preferably Clang, GCC or MSVC)  
-- development libraries of SDL2, SDL2_image and SDL2_ttf (already included for MSVC)  
-
-The minimum required CMake version is 3.1.3 and the compiler needs to support the C++11 standard.  
+- CMake 3.10.2  
+- C++17 compiler (preferably Clang, GCC or MSVC)  
+- development libraries of SDL2 and SDL2_ttf (automatically downloaded for MSVC)  
 
 ### Creating Project Files
 Open a terminal, cd into the project directory and execute the following commands:  
@@ -64,7 +62,7 @@ Variable names can consist of upper-/lowercase letters from "A" to "Z" or "_".
 
 ### Graph View
 To move the viewport either hold down the left mouse button and move the mouse or use the arrow keys.  
-To zoom either hold down Alt and the left mouse button and mov the mouse left or right or use the Page Up/Down keys.  
+To zoom either hold down Alt and the left mouse button and move the mouse left or right or use the Page Up/Down keys.  
 To center the viewport press C.  
 To reset the viewoprt size press X.  
 Right clicking on a graph let's you input an x value to get the function's corresponding y value.  

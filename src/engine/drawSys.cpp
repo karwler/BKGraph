@@ -2,8 +2,8 @@
 
 // FONT SET
 
-FontSet::FontSet(const string& FILE) :
-	file(FILE)
+FontSet::FontSet(const string& path) :
+	file(path)
 {
 	// check if font can be loaded
 	TTF_Font* tmp = TTF_OpenFont(file.c_str(), Default::fontTestHeight);
@@ -18,12 +18,12 @@ FontSet::FontSet(const string& FILE) :
 }
 
 FontSet::~FontSet() {
-	for (const pair<int, TTF_Font*>& it : fonts)
+	for (const pair<const int, TTF_Font*>& it : fonts)
 		TTF_CloseFont(it.second);
 }
 
 void FontSet::clear() {
-	for (const pair<int, TTF_Font*>& it : fonts)
+	for (const pair<const int, TTF_Font*>& it : fonts)
 		TTF_CloseFont(it.second);
 	fonts.clear();
 }
@@ -36,7 +36,7 @@ TTF_Font* FontSet::addSize(int size) {
 }
 
 TTF_Font* FontSet::getFont(int height) {
-	height = float(height) * heightScale;
+	height = int(float(height) * heightScale);
 	return fonts.count(height) ? fonts.at(height) : addSize(height);	// load font if it hasn't been loaded yet
 }
 
@@ -153,7 +153,7 @@ void DrawSys::drawGraphView(GraphView* wgt) {
 		SDL_Color color = World::program()->getFunction(it.fid).color;
 		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 
-		sizt start;
+		sizt start = 0;
 		bool lastIn = false;
 		for (sizt x=0; x<it.pixs.size(); x++) {
 			bool curIn = inRange(it.pixs[x].y, pos.y, endy);
@@ -161,11 +161,11 @@ void DrawSys::drawGraphView(GraphView* wgt) {
 				if (!lastIn)
 					start = x;
 			} else if (lastIn)
-				SDL_RenderDrawLines(renderer, &it.pixs[start], x-start);
+				SDL_RenderDrawLines(renderer, &it.pixs[start], int(x-start));
 			lastIn = curIn;
 		}
 		if (lastIn)
-			SDL_RenderDrawLines(renderer, &it.pixs[start], it.pixs.size()-start);
+			SDL_RenderDrawLines(renderer, &it.pixs[start], int(it.pixs.size()-start));
 	}
 }
 
@@ -187,7 +187,7 @@ void DrawSys::drawPopup(Popup* pop) {
 void DrawSys::drawContext(Context* con) {
 	SDL_Rect rect = con->rect();
 	drawRect(rect, Default::colorLight);	// draw background
-	
+
 	const vector<ContextItem>& items = con->getItems();
 	for (sizt i=0; i<items.size(); i++)		// draw items aka. text
 		drawText(items[i].tex, con->itemRect(i), rect);
@@ -207,9 +207,8 @@ void DrawSys::drawLine(vec2i pos, vec2i end, SDL_Color color, const SDL_Rect& fr
 
 void DrawSys::drawText(SDL_Texture* tex, const SDL_Rect& rect, const SDL_Rect& frame) {
 	// crop destination rect and original texture rect
-	SDL_Rect dst = rect;
-	SDL_Rect crop = cropRect(dst, frame);
-	SDL_Rect src = {crop.x, crop.y, rect.w - crop.w, rect.h - crop.h};
-
-	SDL_RenderCopy(renderer, tex, &src, &dst);
+	if (SDL_Rect dst; SDL_IntersectRect(&rect, &frame, &dst)) {
+		SDL_Rect src = {dst.x - rect.x, dst.y - rect.y, dst.w, dst.h};
+		SDL_RenderCopy(renderer, tex, &src, &dst);
+	}
 }

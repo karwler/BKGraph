@@ -9,7 +9,7 @@ int WindowSys::start() {
 	try {
 		init();
 		exec();
-	} catch (string str) {
+	} catch (const string& str) {
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", str.c_str(), window);
 	} catch (...) {
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Unknown error.", window);
@@ -23,10 +23,10 @@ void WindowSys::init() {
 		throw "Couldn't initialize SDL:\n" + string(SDL_GetError());
 	if (TTF_Init())
 		throw "Couldn't initialize fonts:\n" + string(SDL_GetError());
-	if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG))
-		cerr << "Couldn't initialize PNGs:" << endl << IMG_GetError() << endl;
+	SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1");
 	SDL_StopTextInput();	// for some reason TextInput is on
 
+	Filer::init();
 	sets = Filer::loadSettings();
 	createWindow();
 	scene.reset(new Scene);
@@ -40,9 +40,8 @@ void WindowSys::exec() {
 		drawSys->drawWidgets();
 
 		// poll events
-		SDL_Event event;
 		uint32 timeout = SDL_GetTicks() + Default::eventCheckTimeout;
-		while (SDL_PollEvent(&event) && SDL_GetTicks() < timeout)
+		for (SDL_Event event; SDL_PollEvent(&event) && SDL_GetTicks() < timeout;)
 			handleEvent(event);
 	}
 	// save changes
@@ -55,7 +54,6 @@ void WindowSys::cleanup() {
 	scene.reset();
 	destroyWindow();
 
-	IMG_Quit();
 	TTF_Quit();
 	SDL_Quit();
 }
@@ -73,10 +71,9 @@ void WindowSys::createWindow() {
 	window = SDL_CreateWindow(Default::windowTitle, Default::windowPos.x, Default::windowPos.y, sets.resolution.x, sets.resolution.y, flags);
 	if (!window)
 		throw "Couldn't create window:\n" + string(SDL_GetError());
-	
+
 	// set icon
-	SDL_Surface* icon = IMG_Load(string(Filer::dirExec + Default::fileIcon).c_str());
-	if (icon) {
+	if (SDL_Surface* icon = SDL_LoadBMP((Filer::dirExec + Default::fileIcon).c_str())) {
 		SDL_SetWindowIcon(window, icon);
 		SDL_FreeSurface(icon);
 	}
@@ -143,7 +140,7 @@ vec2i WindowSys::mousePos() {
 
 void WindowSys::setFullscreen(bool on) {
 	sets.fullscreen = on;
-	SDL_SetWindowFullscreen(window, on ? SDL_GetWindowFlags(window) | SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_GetWindowFlags(window) & ~SDL_WINDOW_FULLSCREEN_DESKTOP);
+	SDL_SetWindowFullscreen(window, on ? SDL_GetWindowFlags(window) | SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_GetWindowFlags(window) & uint32(~SDL_WINDOW_FULLSCREEN_DESKTOP));
 }
 
 void WindowSys::setFont(const string& font) {

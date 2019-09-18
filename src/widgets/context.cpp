@@ -3,8 +3,8 @@
 // CONTEXT ITEM
 
 ContextItem::ContextItem(const string& TXT, void (Program::*CAL)(ContextItem*)) :
-	text(TXT),
-	call(CAL)
+	call(CAL),
+	text(TXT)
 {
 	tex = World::drawSys()->renderText(text, Default::itemHeight, size);
 }
@@ -35,7 +35,7 @@ Context::~Context() {
 bool Context::onClick(const vec2i& mPos, uint8 mBut) {
 	bool inside = inRect(mPos, rect());
 	if (inside && mBut == SDL_BUTTON_LEFT) {
-		ContextItem& itm = items[(mPos.y - position.y) / Default::itemHeight];	// get the item that was clicked
+		ContextItem& itm = items[uint((mPos.y - position.y) / Default::itemHeight)];	// get the item that was clicked
 		(World::program()->*itm.call)(&itm);
 	}
 	World::scene()->setContext(nullptr);	// close context

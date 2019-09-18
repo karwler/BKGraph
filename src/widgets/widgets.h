@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "prog/defaults.h"
 #include "utils/utils.h"
@@ -32,12 +32,12 @@ public:
 	virtual void drawSelf() {}	// calls appropriate drawing function(s) in DrawSys
 	virtual void postInit() {}
 	virtual void onResize() {}	// for updating values when window size changed
-	virtual bool onKeypress(const SDL_Keysym& key) { return false; }	// returns true if interaction occurs
-	virtual void onText(const char* str) {}
-	virtual bool onClick(const vec2i& mPos, uint8 mBut) { return false; }	// returns true if interaction occurs
-	virtual void onDrag(const vec2i& mPos, const vec2i& mMov) {}	// mouse move while left button down
-	virtual void onUndrag(uint8 mBut) {}	// get's called on mouse button up if instance is Scene's capture
-	virtual void onScroll(int wMov) {}	// on mouse wheel y movement
+	virtual bool onKeypress(const SDL_Keysym&) { return false; }	// returns true if interaction occurs
+	virtual void onText(const char*) {}
+	virtual bool onClick(const vec2i&, uint8) { return false; }	// returns true if interaction occurs
+	virtual void onDrag(const vec2i&, const vec2i&) {}	// mouse move while left button down
+	virtual void onUndrag(uint8) {}	// get's called on mouse button up if instance is Scene's capture
+	virtual void onScroll(int) {}	// on mouse wheel y movement
 
 	Layout* getParent() const { return parent; }
 	sizt getID() const { return pcID; }

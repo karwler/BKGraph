@@ -5,14 +5,17 @@
 // element used to calculate Y for X in Function
 class Subfunction {
 public:
+	virtual ~Subfunction() = default;
+
 	virtual double solve() const = 0;
 };
 
 class SubfunctionF1 : public Subfunction {
 public:
 	SubfunctionF1(mf1ptr a=nullptr, Subfunction* b=nullptr);
+	virtual ~SubfunctionF1() override = default;
 
-	virtual double solve() const;
+	virtual double solve() const override;
 
 private:
 	mf1ptr mf1;
@@ -22,8 +25,9 @@ private:
 class SubfunctionF2 : public Subfunction {
 public:
 	SubfunctionF2(mf2ptr a=nullptr, Subfunction* b=nullptr, Subfunction* c=nullptr);
+	virtual ~SubfunctionF2() override = default;
 
-	virtual double solve() const;
+	virtual double solve() const override;
 
 private:
 	mf2ptr mf2;
@@ -33,8 +37,9 @@ private:
 class SubfunctionNum : public Subfunction {
 public:
 	SubfunctionNum(double a=0.0);
+	virtual ~SubfunctionNum() override = default;
 
-	virtual double solve() const;
+	virtual double solve() const override;
 
 private:
 	double num;
@@ -43,8 +48,9 @@ private:
 class SubfunctionVar : public Subfunction {
 public:
 	SubfunctionVar(const string& a="");
+	virtual ~SubfunctionVar() override = default;
 
-	virtual double solve() const;
+	virtual double solve() const override;
 
 private:
 	string var;

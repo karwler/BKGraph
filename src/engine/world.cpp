@@ -9,7 +9,7 @@ WindowSys World::windowSys;
 #if defined(_WIN32) && !defined(_DEBUG)
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
 #else
-int main(int argc, char** argv) {
+int main(int, char**) {
 #endif
 	return World::winSys()->start();
 }

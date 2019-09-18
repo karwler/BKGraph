@@ -25,7 +25,7 @@ void GraphView::postInit() {
 }
 
 void GraphView::onResize() {
-	int siz = size().x;
+	uint siz = uint(size().x);
 	for (Graph& it : graphs) {
 		it.dots.resize(siz);	// one dot for each pixel along the x axis
 		it.pixs.resize(siz);
@@ -68,14 +68,14 @@ bool GraphView::onClick(const vec2i& mPos, uint8 mBut) {
 
 Graph* GraphView::getMouseOverGraph(const vec2i& mPos) {
 	vec2i pos = position();
-	sizt i = mPos.x - pos.x;
+	sizt i = sizt(mPos.x - pos.x);
 	for (Graph& it : graphs)
 		if (inRange(mPos.y, it.pixs[i].y - Default::graphClickArea, it.pixs[i].y + Default::graphClickArea))
 			return &it;
 	return nullptr;
 }
 
-void GraphView::onDrag(const vec2i& mPos, const vec2i& mMov) {
+void GraphView::onDrag(const vec2i&, const vec2i& mMov) {
 	if (SDL_GetKeyboardState(nullptr)[SDL_SCANCODE_LSHIFT])	// if holding left shift setViewSize
 		zoom(float(mMov.x) * Default::mouseZoomFactor);
 	else	// otherwise move view
@@ -103,7 +103,7 @@ void GraphView::updateDots() {
 	for (Graph& it : graphs)
 		for (sizt i=0; i<it.dots.size(); i++) {
 			it.dots[i].x = World::winSys()->getSettings().viewPos.x + World::winSys()->getSettings().viewSize.x / siz.x * float(i);	// get x value in coordinate system
-			it.dots[i].y = World::program()->getFunction(it.fid).solve(it.dots[i].x);	// get the corresponding y value
+			it.dots[i].y = float(World::program()->getFunction(it.fid).solve(double(it.dots[i].x)));	// get the corresponding y value
 			it.pixs[i] = {pos.x + int(i), pos.y + int(dotToPix(it.dots[i].y, World::winSys()->getSettings().viewPos.y, World::winSys()->getSettings().viewSize.y, siz.y))};	// get pixel position
 		}
 }

@@ -76,7 +76,7 @@ void Button::drawSelf() {
 	World::drawSys()->drawButton(this);
 }
 
-bool Button::onClick(const vec2i& mPos, uint8 mBut) {
+bool Button::onClick(const vec2i&, uint8 mBut) {
 	if (mBut == SDL_BUTTON_LEFT && lcall)
 		(World::program()->*lcall)(this);
 	else if (mBut == SDL_BUTTON_RIGHT && rcall)
@@ -95,7 +95,7 @@ void CheckBox::drawSelf() {
 	World::drawSys()->drawCheckBox(this);
 }
 
-bool CheckBox::onClick(const vec2i& mPos, uint8 mBut) {
+bool CheckBox::onClick(const vec2i&, uint8 mBut) {
 	if (mBut == SDL_BUTTON_LEFT && lcall) {
 		on = !on;
 		(World::program()->*lcall)(this);
@@ -155,7 +155,7 @@ bool Slider::onClick(const vec2i& mPos, uint8 mBut) {
 	return true;
 }
 
-void Slider::onDrag(const vec2i& mPos, const vec2i& mMov) {
+void Slider::onDrag(const vec2i& mPos, const vec2i&) {
 	setSlider(mPos.x - diffSliderMouse);
 }
 
@@ -254,14 +254,14 @@ void Label::updateTex() {
 
 LineEdit::LineEdit(const string& TXT, void (Program::*LCL)(Button*), void (Program::*RCL)(Button*), const Size& SIZ, TextType TYP, void* DAT) :
 	Label(TXT, LCL, RCL, SIZ, Alignment::left, DAT),
-	textType(TYP),
 	textOfs(0),
-	cpos(0)
+	cpos(0),
+	textType(TYP)
 {
 	cleanText();
 }
 
-bool LineEdit::onClick(const vec2i& mPos, uint8 mBut) {
+bool LineEdit::onClick(const vec2i&, uint8 mBut) {
 	if (mBut == SDL_BUTTON_LEFT) {
 		oldText = text;
 		setCPos(text.length());

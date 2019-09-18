@@ -32,7 +32,7 @@ void Layout::postInit() {
 
 void Layout::onResize() {
 	// get amount of space for widgets with prc and get sum of widget's prc
-	float space = (vertical ? size().y : size().x) - (widgets.size()-1) * spacing;
+	float space = float((vertical ? size().y : size().x) - int(widgets.size()-1) * spacing);
 	float total = 0;
 	for (Widget* it : widgets) {
 		if (it->getRelSize().usePix())
@@ -45,7 +45,7 @@ void Layout::onResize() {
 	int pos = 0;
 	for (sizt i=0; i<widgets.size(); i++) {
 		positions[i] = pos;
-		pos += (widgets[i]->getRelSize().usePix() ? widgets[i]->getRelSize().getPix() : widgets[i]->getRelSize().getPrc() * space / total) + spacing;
+		pos += (widgets[i]->getRelSize().usePix() ? widgets[i]->getRelSize().getPix() : int(widgets[i]->getRelSize().getPrc() * space / total)) + spacing;
 	}
 	positions.back() = widgets.empty() ? spacing : pos;
 
@@ -113,7 +113,7 @@ bool ScrollArea::onClick(const vec2i& mPos, uint8 mBut) {
 	return true;
 }
 
-void ScrollArea::onDrag(const vec2i& mPos, const vec2i& mMov) {
+void ScrollArea::onDrag(const vec2i& mPos, const vec2i&) {
 	setSlider(mPos.y - diffSliderMouse);
 }
 
@@ -217,5 +217,5 @@ vec2i Popup::position() const {
 
 vec2i Popup::size() const {
 	vec2f res = World::winSys()->resolution();
-	return vec2i(relSize.usePix() ? relSize.getPix() : relSize.getPrc() * res.x, sizeY.usePix() ? sizeY.getPix() : sizeY.getPrc() * res.y);
+	return vec2i(relSize.usePix() ? relSize.getPix() : int(relSize.getPrc() * res.x), sizeY.usePix() ? sizeY.getPix() : int(sizeY.getPrc() * res.y));
 }

@@ -7,7 +7,7 @@
 // loads different font sizes from one file
 class FontSet {
 public:
-	FontSet(const string& FILE);
+	FontSet(const string& path);
 	~FontSet();
 
 	void clear();
